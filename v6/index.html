@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Text Me Portfolio</title>
+<meta name="description" content="Portfolio of Your Name as a chat. Ask a question, get an answer. Placeholder content.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ PROFILE ============ -->
+  <aside class="profile">
+    <div class="avatar avatar--xl" aria-hidden="true"><span>YN</span><i class="online"></i></div>
+    <h1 class="name">Your Name</h1>
+    <p class="role">Role title &middot; City, Country</p>
+    <p class="status"><span class="dot" aria-hidden="true"></span>Open to new projects &middot; <span id="localtime">--:--</span> local time</p>
+
+    <div class="quick">
+      <button class="qbtn" id="p-email"><span aria-hidden="true">@</span>Email</button>
+      <a class="qbtn" href="#" data-placeholder><span aria-hidden="true">in</span>LinkedIn</a>
+      <a class="qbtn" href="#" data-placeholder><span aria-hidden="true">gh</span>GitHub</a>
+      <a class="qbtn" href="#" data-placeholder><span aria-hidden="true">cv</span>R&eacute;sum&eacute;</a>
+    </div>
+
+    <nav class="topics" aria-label="Ask about">
+      <p class="topics-title">Ask me about</p>
+      <div id="topic-list"></div>
+    </nav>
+  </aside>
+
+  <!-- ============ CHAT ============ -->
+  <section class="chat" aria-label="Chat with Your Name">
+    <header class="chat-head">
+      <div class="avatar" aria-hidden="true"><span>YN</span><i class="online"></i></div>
+      <div class="chat-who">
+        <p class="chat-name">Your Name</p>
+        <p class="chat-sub" id="chat-sub">Online &middot; replies instantly</p>
+      </div>
+      <div class="chat-tools">
+        <button class="icon-btn" id="restart" aria-label="Restart the chat" title="Restart the chat">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="icon-btn" id="theme" aria-label="Switch to dark mode" title="Switch theme">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="messages" id="messages" role="log" aria-live="polite"></div>
+
+    <div class="composer">
+      <div class="chips" id="chips" aria-label="Suggested questions"></div>
+      <form class="input" id="input-form" autocomplete="off">
+        <label class="sr-only" for="input">Type a message</label>
+        <input id="input" placeholder="Ask me anything&hellip;" maxlength="300">
+        <button class="send" type="submit" aria-label="Send">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+    </div>
+  </section>
+</div>
+
+<!-- Project details -->
+<dialog class="sheet" id="sheet" aria-labelledby="s-title">
+  <div class="sheet-inner">
+    <div class="sheet-art" id="s-art"><button class="icon-btn sheet-close" id="s-close" aria-label="Close">&times;</button></div>
+    <div class="sheet-body">
+      <p class="s-meta" id="s-meta"></p>
+      <h2 id="s-title"></h2>
+      <p id="s-desc"></p>
+      <dl class="s-facts" id="s-facts"></dl>
+      <div class="s-actions">
+        <a class="btn" href="#" data-placeholder>View case study</a>
+        <button class="btn btn--ghost" id="s-ask">Ask about this project</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="main.js"></script>
+</body>
+</html>

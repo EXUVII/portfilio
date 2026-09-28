@@ -1,6 +1,6 @@
 # Portfolio designs
 
-Five interactive portfolio directions:
+Six interactive portfolio directions:
 
 | Design | Folder | Idea |
 | --- | --- | --- |
@@ -9,6 +9,7 @@ Five interactive portfolio directions:
 | **3 · Pocket Planet** | `/v3/` | 64-bit era (N64 / PS1) low-poly 3D. One screen: a tiny planet you spin, with a house, gallery, tower and mailbox as the sections. |
 | **4 · Riso Press** | `/v4/` | No pixels: a two-ink risograph zine with physics type, halftones, generative posters and swappable ink sets. |
 | **5 · Nav Console** | `/v5/` | Calm sci-fi one-pager: a slowly rotating 3D galaxy behind the intro, then clean About, Work, Experience and Contact sections. |
+| **6 · Text Me** | `/v6/` | The portfolio is a chat: visitors tap questions and you answer with messages, project cards and a timeline. |
 
 ---
 
@@ -121,3 +122,17 @@ A calm, sci-fi styled one-page site: dark space, ice-cyan accents, thin lines.
 - Normal page scroll and a sticky nav; phones get a Menu button.
 
 Edit content in `v5/index.html`; projects live in the `PROJECTS` array at the top of `v5/main.js`.
+
+---
+
+## Design 6 — Text Me (`v6/`)
+
+Open `v6/index.html` (or `http://localhost:8000/v6/`). No libraries.
+
+- **A chat instead of pages.** Visitors tap suggested questions (or type their own) and "you" reply with typing indicators and chat bubbles.
+- **Rich answers.** Project cards in a swipeable row (tap for a details sheet), an experience timeline, skill bars and tool tags, and a contact card with copy-email.
+- **Contact as a conversation.** "Send me a message here" asks for name, email and message one step at a time, with email validation. It is a demo, so nothing is sent.
+- **Small delights.** Emoji reactions on messages, a rock-paper-scissors game, "Ask about this project" from the details sheet, read receipts and a restart button.
+- **Profile panel** with name, role, local time, quick links and a topic list (hidden on phones to keep the chat full-screen). Light and dark mode.
+
+Edit everything in the `CONTENT` block at the top of `v6/main.js` (answers, projects, jobs, skills, email).
