@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Studio Hours Portfolio</title>
+<meta name="description" content="Portfolio of Your Name. One day in a pixel-art studio, from morning coffee to lights out. Placeholder content.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Martian+Mono:wght@300..500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#intro">Skip to content</a>
+
+<div class="layout">
+
+  <!-- ============ THE ROOM ============ -->
+  <div class="scene-col">
+    <div class="scene" id="scene">
+      <canvas id="view" role="img" aria-label="An isometric pixel-art studio room. The time of day follows your scroll position."></canvas>
+
+      <div class="scene-actions" aria-label="Room actions">
+        <button class="chip" id="act-lamp" aria-pressed="false">Lamp</button>
+        <button class="chip" id="act-rain" aria-pressed="false">Rain</button>
+        <button class="chip" id="act-cat">Pet cat</button>
+        <button class="chip" id="act-plant">Water plant</button>
+      </div>
+
+      <div class="bubble" id="bubble" hidden></div>
+      <div class="tip" id="tip" hidden><span class="tip-name" id="tip-name"></span><span class="tip-hint" id="tip-hint"></span></div>
+
+      <div class="hud">
+        <div class="clock">
+          <span class="clock-time" id="clock">07:30</span>
+          <span class="clock-label" id="clock-label">Morning · Clear</span>
+        </div>
+        <div class="daybar" aria-hidden="true">
+          <div class="daybar-track"><span class="daybar-fill" id="dayfill"></span><span class="daybar-dot" id="daydot"></span></div>
+          <div class="daybar-ticks"><span>06</span><span>12</span><span>18</span><span>24</span></div>
+        </div>
+      </div>
+      <p class="scene-hint">Hover the room. Click anything.</p>
+    </div>
+  </div>
+
+  <!-- ============ THE STORY ============ -->
+  <div class="story">
+    <header class="bar">
+      <a class="brand" href="#intro"><span class="brand-mark" aria-hidden="true"></span>Your Name</a>
+      <nav class="sched" aria-label="Sections">
+        <a href="#intro" data-ch="0"><time>07</time>Intro</a>
+        <a href="#about" data-ch="1"><time>10</time>About</a>
+        <a href="#work" data-ch="2"><time>13</time>Work</a>
+        <a href="#log" data-ch="3"><time>18</time>Log</a>
+        <a href="#contact" data-ch="4"><time>22</time>Contact</a>
+      </nav>
+      <button class="theme-btn" id="theme" aria-label="Switch to dark theme"><span aria-hidden="true"></span></button>
+    </header>
+
+    <main>
+      <!-- 07:30 -->
+      <section class="ch ch--intro" id="intro" data-ch="0">
+        <p class="stamp"><time>07:30</time><span>Morning, in the studio</span></p>
+        <h1 class="name">Your<br>Name</h1>
+        <p class="lede">Role title. I design and build <em>playful, precise</em> digital products. This site is one day in my studio, from the first coffee to lights out.</p>
+        <dl class="facts">
+          <div><dt>Based in</dt><dd>City, Country</dd></div>
+          <div><dt>Currently</dt><dd>Job Title at Company Name</dd></div>
+          <div><dt>Open to</dt><dd>Freelance &amp; full-time</dd></div>
+        </dl>
+        <p class="cue"><span aria-hidden="true">&darr;</span> Scroll to pass the time</p>
+      </section>
+
+      <!-- 10:00 -->
+      <section class="ch" id="about" data-ch="1">
+        <p class="stamp"><time>10:00</time><span>About</span></p>
+        <h2 class="h2">I sweat the <em>small details</em> so the big ideas feel effortless.</h2>
+        <div class="prose">
+          <p>A short paragraph about who you are. Where you started, what you care about, and the kind of problems you like to solve. This is placeholder copy to show how a real paragraph sits in the column.</p>
+          <p>A second paragraph for how you work with people: teams, founders, clients. Mention the thing you are known for, and one thing you are learning right now.</p>
+        </div>
+        <h3 class="label">On the desk</h3>
+        <ul class="tools">
+          <li>Figma</li><li>React</li><li>TypeScript</li><li>Three.js</li><li>Aseprite</li><li>Blender</li><li>After Effects</li><li>A paper notebook</li>
+        </ul>
+        <h3 class="label">How I work</h3>
+        <ol class="principles">
+          <li><strong>Sketch first.</strong> A principle in one line. Replace with your own.</li>
+          <li><strong>Prototype early.</strong> A second principle in one line.</li>
+          <li><strong>Ship, then polish.</strong> A third principle in one line.</li>
+        </ol>
+      </section>
+
+      <!-- 13:30 -->
+      <section class="ch" id="work" data-ch="2">
+        <p class="stamp"><time>13:30</time><span>Selected work</span></p>
+        <h2 class="h2">Things I&rsquo;ve made, <em>shipped</em>, and learned from.</h2>
+        <p class="aside">Hover a project to put it on the studio monitor.</p>
+        <ol class="works" id="works"></ol>
+      </section>
+
+      <!-- 18:15 -->
+      <section class="ch" id="log" data-ch="3">
+        <p class="stamp"><time>18:15</time><span>Logbook</span></p>
+        <h2 class="h2">Every book on the shelf is a <em>chapter</em>.</h2>
+        <ol class="log" id="log-list">
+          <li class="job is-open">
+            <button class="job-row" aria-expanded="true" aria-controls="j0">
+              <span class="job-date">2024 &ndash; Now</span>
+              <span class="job-main"><span class="job-role">Job Title</span><span class="job-org">Company Name, City</span></span>
+              <span class="job-sign" aria-hidden="true"></span>
+            </button>
+            <div class="job-body" id="j0"><div class="job-inner">
+              <p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p>
+              <ul>
+                <li>Key achievement with a number, such as a metric you moved.</li>
+                <li>Something you led, launched, or built.</li>
+                <li>A process, system, or team you improved.</li>
+              </ul>
+            </div></div>
+          </li>
+          <li class="job">
+            <button class="job-row" aria-expanded="false" aria-controls="j1">
+              <span class="job-date">2021 &ndash; 2024</span>
+              <span class="job-main"><span class="job-role">Job Title</span><span class="job-org">Company Name, City</span></span>
+              <span class="job-sign" aria-hidden="true"></span>
+            </button>
+            <div class="job-body" id="j1"><div class="job-inner">
+              <p>Two or three sentences on the role.</p>
+              <ul><li>Key achievement with a number.</li><li>Something you led or launched.</li></ul>
+            </div></div>
+          </li>
+          <li class="job">
+            <button class="job-row" aria-expanded="false" aria-controls="j2">
+              <span class="job-date">2019 &ndash; 2021</span>
+              <span class="job-main"><span class="job-role">Job Title</span><span class="job-org">Company Name, City</span></span>
+              <span class="job-sign" aria-hidden="true"></span>
+            </button>
+            <div class="job-body" id="j2"><div class="job-inner">
+              <p>Two or three sentences on the role.</p>
+              <ul><li>Key achievement with a number.</li><li>Something you led or launched.</li></ul>
+            </div></div>
+          </li>
+          <li class="job">
+            <button class="job-row" aria-expanded="false" aria-controls="j3">
+              <span class="job-date">2015 &ndash; 2019</span>
+              <span class="job-main"><span class="job-role">Degree or first role</span><span class="job-org">School or Company, City</span></span>
+              <span class="job-sign" aria-hidden="true"></span>
+            </button>
+            <div class="job-body" id="j3"><div class="job-inner">
+              <p>Where it started. A sentence or two on your studies or first job.</p>
+            </div></div>
+          </li>
+        </ol>
+      </section>
+
+      <!-- 22:30 -->
+      <section class="ch ch--contact" id="contact" data-ch="4">
+        <p class="stamp"><time>22:30</time><span>Contact</span></p>
+        <h2 class="hello">Say<br>hello</h2>
+        <p class="lede">Open to freelance projects and full-time roles from Month 2026.</p>
+
+        <div class="email-row">
+          <span class="email" id="email">hello@yourname.com</span>
+          <button class="btn" id="copy">Copy</button>
+        </div>
+        <ul class="links">
+          <li><a href="#" data-placeholder>LinkedIn</a></li>
+          <li><a href="#" data-placeholder>GitHub</a></li>
+          <li><a href="#" data-placeholder>Dribbble</a></li>
+          <li><a href="#" data-placeholder>R&eacute;sum&eacute; (PDF)</a></li>
+        </ul>
+
+        <form class="note-form" id="note-form">
+          <div class="note" id="note-preview" aria-hidden="true">
+            <p class="note-text" id="note-text">Your note shows up here&hellip;</p>
+            <p class="note-sig" id="note-sig">&mdash; you</p>
+          </div>
+          <div class="note-fields">
+            <h3 class="label">Leave a note on the board</h3>
+            <div class="field"><label for="n-name">Name</label><input id="n-name" name="name" autocomplete="name" maxlength="40"></div>
+            <div class="field"><label for="n-msg">Message</label><textarea id="n-msg" name="message" rows="3" maxlength="160" required></textarea></div>
+            <button class="btn btn--solid" type="submit">Pin it to the board</button>
+            <p class="note-status" id="note-status" role="status"></p>
+          </div>
+        </form>
+
+        <footer class="foot">
+          <p>&copy; <span id="year">2026</span> Your Name</p>
+          <p>Lights out at 23:59</p>
+        </footer>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="peek" id="peek" aria-hidden="true"><canvas id="peek-canvas" width="32" height="24"></canvas><span class="peek-label" id="peek-label"></span></div>
+
+<script src="main.js"></script>
+</body>
+</html>
