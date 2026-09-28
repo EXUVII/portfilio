@@ -151,8 +151,8 @@ main { max-width: 600px; }
 .tools li:hover { border-color: var(--ink); background: var(--paper-2); }
 
 .principles { list-style: none; padding: 0; margin: 0; counter-reset: p; display: grid; }
-.principles li { counter-increment: p; display: grid; grid-template-columns: 44px 1fr; padding: 14px 0; border-top: 1px solid var(--rule); color: var(--ink-2); }
-.principles li::before { content: counter(p, decimal-leading-zero); font-family: var(--f-mono); font-size: 0.6875rem; color: var(--accent); padding-top: 6px; }
+.principles li { counter-increment: p; position: relative; padding: 14px 0 14px 44px; border-top: 1px solid var(--rule); color: var(--ink-2); }
+.principles li::before { content: counter(p, decimal-leading-zero); position: absolute; left: 0; top: 14px; font-family: var(--f-mono); font-size: 0.6875rem; color: var(--accent); padding-top: 6px; }
 .principles strong { color: var(--ink); font-weight: 500; }
 
 /* ---------- Work list ---------- */
