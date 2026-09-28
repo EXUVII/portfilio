@@ -1,11 +1,12 @@
 # Portfolio designs
 
-Two interactive portfolio directions, both pixel art × studio design:
+Three interactive portfolio directions, all retro-game art × studio design:
 
 | Design | Folder | Idea |
 | --- | --- | --- |
 | **1 · Press Start** | `/` (root) | A game HUD: playable platformer hero, coins, achievements, quest log, inventory. |
 | **2 · Studio Hours** | `/v2/` | A live isometric pixel room beside an editorial column. Scrolling moves the clock from morning to night, and the camera and character follow each section. |
+| **3 · Pocket Planet** | `/v3/` | 64-bit era (N64 / PS1) low-poly 3D. One screen: a tiny planet you spin, with a house, gallery, tower and mailbox as the sections. |
 
 ---
 
@@ -68,3 +69,19 @@ Open `v2/index.html` (or `http://localhost:8000/v2/` when serving the folder).
 - The room is drawn by a small custom isometric rasterizer on `<canvas>` (no libraries), with an ID buffer for hover and click picking.
 
 Edit content in `v2/index.html`; projects live in the `PROJECTS` array at the top of `v2/main.js`.
+
+---
+
+## Design 3 — Pocket Planet (`v3/`)
+
+Open `v3/index.html` (or `http://localhost:8000/v3/`). Uses Three.js r128 from cdnjs.
+
+- **64-bit rendering pipeline.** The scene renders at 240p into a low-res target, then a post pass upscales with nearest-neighbour and applies 15-bit color with ordered dithering. Vertices snap to the low-res grid (the classic wobble), lighting is per-vertex Gouraud, there is distance haze, textures are tiny and bilinear-blurred, and painting textures use affine (non-perspective) mapping.
+- **A planet as the menu.** Drag to spin it, with inertia and auto-spin when idle. Click the house (About), the gallery (Work), the tower (Experience) or the mailbox (Contact). The planet turns the place upright, the camera flies in, and a panel opens.
+- **Gallery.** Each floating painting is a project. Hovering ripples it, clicking opens it, and the ring turns the selected painting toward the camera.
+- **Tower.** One floor per job. Hovering a job in the panel lights up its floor.
+- **Mailbox.** The form launches a paper plane and raises the flag. It is a demo, so nothing is sent.
+- **Extras.** A little character walks around the planet (click to make them jump), a collectible star orbits, and the chimney smokes. The **Video settings** menu switches resolution (240p / 360p / 480p / HD), dithering, vertex wobble, haze and auto-spin.
+- Falls back to a menu-only page if WebGL is unavailable.
+
+Edit content in `v3/index.html`; projects live in the `PROJECTS` array at the top of `v3/main.js`.
