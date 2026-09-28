@@ -20,24 +20,40 @@
   const ease = (k) => k * k * (3 - 2 * k);
 
   /* ---------------------------------------------------------
-     CONTENT — placeholders (edit these)
+     CONTENT (edit these)
      --------------------------------------------------------- */
   const PROJECTS = [
-    { title: 'Project One', type: 'Product', year: '2026', role: 'Lead Designer', stack: 'Figma, React, TypeScript', layout: 'hero', desc: 'Short summary of the project: the problem, your role, and the outcome.' },
-    { title: 'Project Two', type: 'Web', year: '2025', role: 'Design & Development', stack: 'Astro, GSAP', layout: 'grid', desc: 'One or two sentences about what this was and why it mattered.' },
-    { title: 'Project Three', type: 'Game', year: '2025', role: 'Art Direction', stack: 'Aseprite, Godot', layout: 'game', desc: 'One or two sentences about what this was and why it mattered.' },
-    { title: 'Project Four', type: 'Brand', year: '2024', role: 'Visual Identity', stack: 'Illustrator, Figma', layout: 'brand', desc: 'One or two sentences about what this was and why it mattered.' },
-    { title: 'Project Five', type: 'Product', year: '2023', role: 'Product Designer', stack: 'Figma, Framer', layout: 'dash', desc: 'One or two sentences about what this was and why it mattered.' },
-    { title: 'Project Six', type: 'Web', year: '2022', role: 'Frontend', stack: 'Three.js, WebGL', layout: 'grid', desc: 'One or two sentences about what this was and why it mattered.' },
+    { title: 'Flockfall', type: 'Mobile game', year: '2026', role: 'Developer', stack: 'Android, Google Play', layout: 'flock', pal: ['#ffc98f', '#2b2340', '#5a4b7a', '#ff7a4d'],
+      url: 'https://play.google.com/store/apps/details?id=com.leap2joy.murmur', link: 'Get it on Google Play',
+      desc: 'A mobile action-puzzle game on Google Play. You guide a flock of birds through a handcrafted 2D sky, trying to survive and grow your numbers, across atmospheric levels with audio cues that help you read what’s coming.' },
+    { title: 'Cagrex', type: 'Product', year: '2025', role: 'Founder & full-stack engineer', stack: 'Next.js, NestJS, PostgreSQL, Claude & Gemini APIs, E2B', layout: 'dash', pal: ['#0f1622', '#e8eef2', '#7fd1b9', '#f2b84b'],
+      url: 'https://cagrex.com', link: 'Visit cagrex.com',
+      desc: 'A developer-assessment platform for the AI era, built alone end to end. Candidates solve logic challenges, then build a real task with an AI assistant inside an E2B sandbox on a fixed token budget. RLHF-style rubrics score code understanding, efficiency and working style.' },
+    { title: 'Gulf Blue Concepts', type: 'Web', year: '2026', role: 'Freelance web engineer (Upwork)', stack: 'Next.js 14, AWS EC2, Nginx, PM2, Let’s Encrypt', layout: 'grid', pal: ['#eaf3fb', '#0f2c4c', '#2f8fd6', '#6fd3e8'],
+      url: 'https://gulfblueconcepts.com', link: 'Visit gulfblueconcepts.com',
+      desc: 'A full website build and deployment for a TELUS Digital client: Next.js 14 front to back, then a production server on AWS EC2 with an Nginx reverse proxy, PM2 and SSL. The client came back for a repeat engagement.' },
+    { title: 'IRC server', type: 'Systems', year: '1337', role: '42 Network project', stack: 'C++, sockets, poll()', layout: 'net', pal: ['#101820', '#e8eef2', '#46c2ff', '#ff6a3d'],
+      desc: 'An IRC server in C++ that real IRC clients can connect to. Non-blocking sockets with poll(), multi-client protocol parsing, a command state machine, channels and modes.' },
+    { title: 'minishell', type: 'Systems', year: '1337', role: '42 Network project', stack: 'C, fork / execve / waitpid, signals', layout: 'term', pal: ['#14161c', '#d8dee9', '#7fd18b', '#f2b84b'],
+      desc: 'A POSIX-style shell written from scratch in C: lexer, parser, pipes, redirections, signals and environment expansion, with process control through fork, execve and waitpid.' },
+    { title: 'ft_malloc', type: 'Systems', year: '1337', role: '42 Network project', stack: 'C, mmap', layout: 'mem', pal: ['#f4efe6', '#1d2433', '#e2502a', '#2f6fed'],
+      desc: 'My own malloc, free and realloc on top of mmap. Size-class zones, block splitting and coalescing, alignment guarantees and fragmentation control.' },
+    { title: 'Philosophers', type: 'Systems', year: '1337', role: '42 Network project', stack: 'C, pthreads, mutexes', layout: 'threads', pal: ['#e9e3f5', '#2a2140', '#8a5bff', '#ff7aa8'],
+      desc: 'The dining philosophers problem with pthreads: mutex ordering to prevent data races and deadlocks, and tight timing so nobody starves.' },
+    { title: 'cub3D', type: 'Graphics', year: '1337', role: '42 Network project', stack: 'C, raycasting', layout: 'ray', pal: ['#1b1f3a', '#f4f1ea', '#c9743d', '#8fd3ff'],
+      desc: 'A Wolfenstein-style raycasting renderer in C: fixed-step math, texture mapping and map-file parsing, all by hand.' },
+    { title: 'Inception & IoT', type: 'Ops', year: '1337', role: '42 Network project', stack: 'Docker, Nginx, MariaDB, K3s, Argo CD', layout: 'stack', pal: ['#0d2233', '#e8eef2', '#2496ed', '#ff9f43'],
+      desc: 'A Dockerised Nginx, MariaDB and WordPress stack built from my own images, then a K3s cluster deployed GitOps-style with Argo CD.' },
   ];
   // Each subject is a coloured set of books on the shelf.
   const KNOWLEDGE = [
-    { name: 'Product Design', color: '#b8433a', level: 'Expert', books: ['Design systems', 'UX research', 'Interaction', 'Typography', 'Accessibility'], desc: 'A sentence about how deep you go in this subject and where you learned it.' },
-    { name: 'Frontend', color: '#2f67b3', level: 'Expert', books: ['JavaScript', 'TypeScript', 'React', 'CSS', 'Performance', 'WebGL'], desc: 'A sentence about how deep you go in this subject and where you learned it.' },
-    { name: '3D & Motion', color: '#7a4fa0', level: 'Advanced', books: ['Blender', 'Three.js', 'After Effects', 'Animation'], desc: 'A sentence about how deep you go in this subject and where you learned it.' },
-    { name: 'Product Strategy', color: '#3d8a5a', level: 'Advanced', books: ['Discovery', 'Roadmaps', 'Metrics', 'Workshops'], desc: 'A sentence about how deep you go in this subject and where you learned it.' },
-    { name: 'Illustration', color: '#d69a2d', level: 'Intermediate', books: ['Pixel art', 'Sketching', 'Colour theory'], desc: 'A sentence about how deep you go in this subject and where you learned it.' },
-    { name: 'Languages', color: '#cf6a4c', level: 'Fluent', books: ['English', 'Language two', 'Language three'], desc: 'A sentence about how deep you go in this subject and where you learned it.' },
+    { name: 'Systems in C & C++', color: '#b8433a', level: 'Deep', books: ['Memory & mmap', 'Pointers & UB', 'Threads & locks', 'poll / epoll', 'Sockets & protocols', 'RAII & lifetimes'], desc: 'Learned at 1337 by writing an allocator, a shell, a threaded simulation and a network server from scratch. Alignment, fragmentation, data races, deadlocks, mutex ordering and object lifetimes are things I’ve debugged, not just read about.' },
+    { name: 'Languages', color: '#2f67b3', level: 'Daily', books: ['C', 'C++', 'Python', 'TypeScript', 'JavaScript', 'SQL'], desc: 'C and C++ from the 1337 core, TypeScript for everything web, Python and SQL wherever they fit.' },
+    { name: 'Spoken', color: '#cf6a4c', level: 'Fluent', books: ['English (fluent)', 'Arabic (native)'], desc: 'Arabic is my native language; I work in English every day.' },
+    { name: 'Web & full-stack', color: '#3d8a5a', level: 'Production', books: ['Next.js', 'NestJS', 'React', 'Node.js', 'PostgreSQL', 'MongoDB', 'Prisma'], desc: 'Shipped as a founder (Cagrex), inside a production platform (Lysi Consulting) and for freelance clients (Gulf Blue Concepts).' },
+    { name: 'AI & LLMs', color: '#7a4fa0', level: 'Production', books: ['Claude API', 'Gemini API', 'Prompt design', 'Output evaluation', 'E2B sandboxes'], desc: 'LLM features in production, prompt design, and evaluating model output. Cagrex runs AI-assisted coding tasks in E2B sandboxes and scores how people work with the model.' },
+    { name: 'Game dev', color: '#d69a2d', level: 'Building', books: ['Godot', 'Unity', 'Claude Code'], desc: 'What I’m building right now: mobile games in Godot and Unity, with AI-assisted development in Claude Code. Flockfall is out on Google Play.' },
+    { name: 'Ops & infra', color: '#2a8c8c', level: 'Hands-on', books: ['Docker', 'Nginx', 'AWS EC2', 'Linux', 'Git', 'K3s', 'Argo CD'], desc: 'I deploy what I build: Docker images, Nginx reverse proxies, EC2 servers with PM2 and SSL, and GitOps basics with K3s and Argo CD.' },
   ];
   const JOB_COLORS = [['#2f67b3', '#9fd3ff'], ['#b8433a', '#ffd166'], ['#3d8a5a', '#d8f5a2'], ['#7a4fa0', '#f7b2d9']];
   const ART_PALS = [
@@ -47,7 +63,7 @@
 
   const CH_HOURS = [7.25, 8.5, 10.25, 13, 15.75, 18.3, 22.5, 23.75];
   const BUBBLES = [
-    'Morning. Coffee first, then pixels.',
+    'Morning. Coffee first, then code.',
     'Push-ups first. Every single day.',
     'Welcome to my desk. Poke around.',
     'Hover a project to put it on screen.',
@@ -55,7 +71,7 @@
     'Each frame up there is a job.',
     'Leave me a note on the board.',
   ];
-  const IDLE_LINES = ['Hi! I’m Your Name.', 'The cat is the real boss here.', 'Try clicking the window.', 'The lamp works, by the way.', 'Water the plant a few times.', 'Check the clock on the wall.'];
+  const IDLE_LINES = ['Hi! I’m Adil.', 'The cat is the real boss here.', 'Try clicking the window.', 'The lamp works, by the way.', 'Water the plant a few times.', 'Check the clock on the wall.'];
 
   /* ---------------------------------------------------------
      WORLD, TARGETS, COLOUR
@@ -506,14 +522,23 @@
   const books = [];
   (() => {
     const rnd = mulberry(21);
-    const rowCats = { 2: [0, 1], 1: [2, 3, 4], 0: [5] };
-    Object.entries(rowCats).forEach(([row, cats]) => {
+    // row -> subjects, and the x where that row's free space ends (bookend, decor box)
+    const rowCats = { 2: [[0, 1, 2], 90], 1: [[3, 4, 5], 84], 0: [[6], 55] };
+    Object.entries(rowCats).forEach(([row, [cats, xEnd]]) => {
       const [z0, z1] = SHELF.rows[row];
       let x = SHELF.x0 + 4;
-      cats.forEach((ci) => {
+      const widths = cats.map((ci) => KNOWLEDGE[ci].books.map(() => 4 + Math.floor(rnd() * 2)));
+      const room = xEnd - x - (cats.length - 1) * 3;
+      // thin the widest books until the row fits
+      for (let total = widths.flat().reduce((a, b) => a + b, 0); total > room; total--) {
+        const m = Math.max(...widths.flat());
+        if (m <= 3) break;
+        widths.some((ws) => { const q = ws.indexOf(m); if (q >= 0) ws[q]--; return q >= 0; });
+      }
+      cats.forEach((ci, cj) => {
         const K = KNOWLEDGE[ci];
         K.books.forEach((title, bi) => {
-          const w = 4 + Math.floor(rnd() * 3), h = Math.min(z1 - z0 - 2, 13 + Math.floor(rnd() * 7));
+          const w = widths[cj][bi], h = Math.min(z1 - z0 - 2, 13 + Math.floor(rnd() * 7));
           const hueShift = [-0.1, 0.12, 0, -0.18, 0.2, 0.05][bi % 6];
           books.push({ x, z: z0, w, h, top: z1, cat: ci, base: tone(K.color, hueShift), band: bi % 3 === 0 ? '#e9c46a' : bi % 3 === 1 ? tone(K.color, -0.5) : null, title: rnd() > 0.3 });
           x += w;
@@ -529,7 +554,7 @@
   const ART = PROJECTS.map((p, i) => makeArt(p, i));
   function makeArt(p, i) {
     const W = 32, H = 24, px = new Array(W * H);
-    const [bg, fg, a1, a2] = ART_PALS[i % ART_PALS.length];
+    const [bg, fg, a1, a2] = p.pal || ART_PALS[i % ART_PALS.length];
     const rect = (x, y, w, h, c) => { for (let j = y; j < y + h; j++) for (let k = x; k < x + w; k++) if (k >= 0 && j >= 0 && k < W && j < H) px[j * W + k] = c; };
     const disc = (cx, cy, r, c) => { for (let j = -r; j <= r; j++) for (let k = -r; k <= r; k++) if (k * k + j * j <= r * r) rect(cx + k, cy + j, 1, 1, c); };
     rect(0, 0, W, H, bg);
@@ -538,6 +563,53 @@
     else if (p.layout === 'grid') { for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) { const x = 2 + c * 10, y = 5 + r * 9; rect(x, y, 8, 7, fg); rect(x + 1, y + 1, 6, 3, (r + c) % 2 ? a1 : a2); rect(x + 1, y + 5, 4, 1, bg); } }
     else if (p.layout === 'game') { rect(0, 18, W, 6, a1); rect(9, 9, 4, 4, a2); rect(10, 10, 2, 2, fg); rect(19, 9, 4, 4, a2); rect(20, 10, 2, 2, fg); rect(4, 13, 3, 5, fg); rect(4, 12, 3, 1, '#f1c09a'); rect(22, 5, 6, 2, '#ffffff'); rect(15, 16, 2, 2, a2); }
     else if (p.layout === 'brand') { rect(10, 6, 12, 12, fg); rect(12, 8, 8, 8, bg); rect(14, 10, 4, 4, a1); rect(0, 21, W, 3, a1); rect(26, 5, 3, 3, fg); }
+    else if (p.layout === 'flock') {
+      for (let y = 3; y < H; y++) rect(0, y, W, 1, y < 9 ? bg : y < 14 ? mix(bg, a2, 0.35) : mix(bg, a2, 0.6));
+      disc(24, 16, 4, '#fff3d6');
+      rect(0, 19, W, 5, a1); rect(3, 18, 7, 1, a1); rect(17, 17, 9, 2, a1); rect(19, 16, 5, 1, a1);
+      [[13, 7], [10, 9], [16, 9], [7, 11], [19, 11], [4, 13], [22, 13], [12, 12]].forEach(([x, y]) => { rect(x, y, 1, 1, fg); rect(x + 1, y + 1, 1, 1, fg); rect(x + 2, y, 1, 1, fg); });
+    }
+    else if (p.layout === 'term') {
+      rect(2, 5, 1, 1, a1); rect(4, 5, 10, 1, fg); rect(15, 5, 2, 1, a2); rect(18, 5, 7, 1, fg);
+      rect(2, 8, 18, 1, mix(bg, fg, 0.45)); rect(2, 10, 13, 1, mix(bg, fg, 0.45)); rect(2, 12, 21, 1, mix(bg, fg, 0.45));
+      rect(2, 15, 1, 1, a1); rect(4, 15, 6, 1, fg); rect(11, 15, 1, 1, a2); rect(13, 15, 8, 1, fg); rect(22, 15, 1, 1, a2); rect(24, 15, 4, 1, fg);
+      rect(2, 18, 1, 1, a1); rect(4, 18, 2, 3, fg);
+    }
+    else if (p.layout === 'mem') {
+      const cells = [[2, 4, a2], [7, 7, a1], [15, 3, bg], [19, 6, a1], [26, 4, bg]];
+      [5, 11, 17].forEach((y, r) => { let x = 1; cells.forEach(([, w, c], k) => { const ww = [w, 6 - r + k, w + r - 1][r % 3]; rect(x, y, 1, 4, fg); rect(x + 1, y, Math.max(1, ww - 1), 4, (k + r) % 3 === 2 ? bg : c); x += Math.max(2, ww); }); rect(1, y + 4, 30, 1, fg); });
+    }
+    else if (p.layout === 'net') {
+      const line = (x0, y0, x1, y1, c) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let k = 0; k <= n; k++) rect(Math.round(x0 + (x1 - x0) * k / n), Math.round(y0 + (y1 - y0) * k / n), 1, 1, c); };
+      const nodes = [[4, 7], [27, 7], [4, 19], [27, 19], [15, 21]];
+      nodes.forEach(([x, y], k) => line(15, 13, x, y, k % 2 ? a2 : mix(bg, fg, 0.4)));
+      rect(12, 10, 7, 7, fg); rect(13, 11, 5, 1, a1); rect(13, 13, 5, 1, a1); rect(13, 15, 2, 1, a2);
+      nodes.forEach(([x, y]) => { rect(x - 2, y - 2, 5, 4, fg); rect(x - 1, y - 1, 3, 2, a1); });
+    }
+    else if (p.layout === 'threads') {
+      disc(16, 14, 7, fg); disc(16, 14, 6, a1);
+      for (let k = 0; k < 5; k++) {
+        const t = -Math.PI / 2 + k * Math.PI * 2 / 5, f = t + Math.PI / 5;
+        disc(Math.round(16 + Math.cos(t) * 4), Math.round(14 + Math.sin(t) * 4), 1, bg);
+        disc(Math.round(16 + Math.cos(t) * 10), Math.round(14 + Math.sin(t) * 9), 2, k === 1 ? a2 : fg);
+        rect(Math.round(16 + Math.cos(f) * 5), Math.round(14 + Math.sin(f) * 5), 1, 1, a2);
+      }
+    }
+    else if (p.layout === 'ray') {
+      rect(0, 3, W, 10, bg); rect(0, 13, W, 11, mix(bg, fg, 0.25));
+      for (let k = 0; k < W; k++) {
+        const d = Math.abs(k - 15.5), h = Math.round(3 + d * 0.62);
+        const c = k === 9 || k === 22 ? mix(a1, bg, 0.5) : mix(a1, bg, 0.55 - d / 30);
+        rect(k, 13 - h, 1, h * 2, c);
+        if ((k + (k > 15 ? 1 : 0)) % 4 === 0) rect(k, 13 - h, 1, h * 2, mix(c, bg, 0.3));
+      }
+      rect(15, 18, 2, 6, fg); rect(14, 20, 1, 3, fg); rect(16, 17, 1, 1, a2);
+    }
+    else if (p.layout === 'stack') {
+      rect(0, 20, W, 4, a1);
+      [[4, 14, a1], [11, 14, a2], [18, 14, a1], [7, 9, a2], [14, 9, a1]].forEach(([x, y, c]) => { rect(x, y, 6, 5, c); rect(x, y, 6, 1, mix(c, '#ffffff', 0.3)); rect(x + 1, y + 2, 1, 2, bg); rect(x + 3, y + 2, 1, 2, bg); });
+      rect(25, 8, 5, 12, fg); rect(26, 10, 3, 1, a2); rect(26, 13, 3, 1, a1); rect(26, 16, 3, 1, a1);
+    }
     else { rect(2, 5, 8, 17, fg); for (let j = 0; j < 5; j++) rect(3, 7 + j * 3, 6, 1, j === 1 ? a1 : bg); [6, 10, 7, 12, 9, 14].forEach((b, k) => rect(13 + k * 3, 21 - b, 2, b, k === 5 ? a1 : a2)); rect(12, 21, 19, 1, fg); }
     return px;
   }
@@ -1260,7 +1332,7 @@
     3: { name: 'Window', hint: () => (S.raining ? 'Stop the rain' : 'Make it rain'), act: () => toggleRain() },
     4: { name: 'Corkboard', hint: () => 'Leave a note', act: () => go('contact') },
     5: { name: 'The cat', hint: () => 'Pet', act: () => petCat() },
-    6: { name: 'Your Name', hint: () => 'Say hi', act: () => wave() },
+    6: { name: 'Adil', hint: () => 'Say hi', act: () => wave() },
     7: { name: 'Desk lamp', hint: () => (S.lampI > 0.5 ? 'Turn off' : 'Turn on'), act: () => toggleLamp() },
     8: { name: 'Coffee', hint: () => (S.coffee > 0 ? 'Take a sip' : 'Refill'), act: () => coffee() },
     9: { name: 'Plant', hint: () => 'Water it', act: () => water() },
@@ -1366,7 +1438,7 @@
         <div>
           <p class="work-desc">${p.desc}</p>
           <dl class="work-meta"><div><dt>Role</dt><dd>${p.role}</dd></div><div><dt>Stack</dt><dd>${p.stack}</dd></div></dl>
-          <a class="link" href="#" data-placeholder>Read the case study</a>
+          ${p.url ? `<a class="link" href="${p.url}" target="_blank" rel="noopener">${p.link}</a>` : ''}
         </div>
       </div></div></div>
     </li>`).join('');
