@@ -1,12 +1,13 @@
 # Portfolio designs
 
-Three interactive portfolio directions, all retro-game art × studio design:
+Four interactive portfolio directions:
 
 | Design | Folder | Idea |
 | --- | --- | --- |
 | **1 · Press Start** | `/` (root) | A game HUD: playable platformer hero, coins, achievements, quest log, inventory. |
 | **2 · Studio Hours** | `/v2/` | A live isometric pixel room beside an editorial column. Scrolling moves the clock from morning to night, and the camera and character follow each section. |
 | **3 · Pocket Planet** | `/v3/` | 64-bit era (N64 / PS1) low-poly 3D. One screen: a tiny planet you spin, with a house, gallery, tower and mailbox as the sections. |
+| **4 · Riso Press** | `/v4/` | No pixels: a two-ink risograph zine with physics type, halftones, generative posters and swappable ink sets. |
 
 ---
 
@@ -85,3 +86,20 @@ Open `v3/index.html` (or `http://localhost:8000/v3/`). Uses Three.js r128 from c
 - Falls back to a menu-only page if WebGL is unavailable.
 
 Edit content in `v3/index.html`; projects live in the `PROJECTS` array at the top of `v3/main.js`.
+
+---
+
+## Design 4 — Riso Press (`v4/`)
+
+Open `v4/index.html` (or `http://localhost:8000/v4/`). Uses Matter.js 0.19 from cdnjs for physics.
+
+- **Printed in two inks.** Everything is drawn in one bright ink and one dark ink on off-white paper, with multiply overprinting, paper grain, misregistered layers, crop marks, registration targets and a colour bar.
+- **Physics cover.** The name is made of heavy letters you can grab and throw. Click the paper to knock them over; Shake and Reset buttons are included. On touch screens, tap to knock (the page still scrolls).
+- **Halftone portrait.** A duotone dot portrait (placeholder silhouette) swells under the cursor. Set `PORTRAIT_SRC` in `main.js` to halftone a real photo.
+- **Prints strip.** Generative two-ink posters, one per project, in a drag-to-scroll strip. Hovering pulls the two ink layers apart; clicking opens a detail view.
+- **Tools tray.** Skill tags piled in a physics tray you can drag, tap and shake.
+- **Print log.** Experience as a spec-sheet table with expandable rows.
+- **Order form.** Contact form that stamps "Received" on submit. It is a demo, so nothing is sent.
+- **Ink switcher.** Reprints the whole site in Pink + Blue, Orange + Green, Yellow + Purple, or Red + Black, and remembers your choice.
+
+Edit content in `v4/index.html`; the name, projects and tools are at the top of `v4/main.js`.
