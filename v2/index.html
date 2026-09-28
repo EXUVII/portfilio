@@ -18,7 +18,7 @@
   <!-- ============ THE ROOM ============ -->
   <div class="scene-col">
     <div class="scene" id="scene">
-      <canvas id="view" role="img" aria-label="An isometric pixel-art studio room. The time of day follows your scroll position."></canvas>
+      <canvas id="view" role="img" aria-label="A detailed isometric pixel-art studio with a desk, a bookshelf of knowledge, framed jobs on the wall and a window. The time of day follows your scroll position."></canvas>
 
       <div class="scene-actions" aria-label="Room actions">
         <button class="chip" id="act-lamp" aria-pressed="false">Lamp</button>
@@ -52,8 +52,9 @@
         <a href="#intro" data-ch="0"><time>07</time>Intro</a>
         <a href="#about" data-ch="1"><time>10</time>About</a>
         <a href="#work" data-ch="2"><time>13</time>Work</a>
-        <a href="#log" data-ch="3"><time>18</time>Log</a>
-        <a href="#contact" data-ch="4"><time>22</time>Contact</a>
+        <a href="#knowledge" data-ch="3"><time>15</time>Library</a>
+        <a href="#log" data-ch="4"><time>18</time>Log</a>
+        <a href="#contact" data-ch="5"><time>22</time>Contact</a>
       </nav>
       <button class="theme-btn" id="theme" aria-label="Switch to dark theme"><span aria-hidden="true"></span></button>
     </header>
@@ -100,10 +101,19 @@
         <ol class="works" id="works"></ol>
       </section>
 
+      <!-- 15:45 -->
+      <section class="ch" id="knowledge" data-ch="3">
+        <p class="stamp"><time>15:45</time><span>The library</span></p>
+        <h2 class="h2">Every shelf is something I <em>know</em>.</h2>
+        <p class="aside">Each colour on the bookshelf is a subject. Hover one here or click the books in the room.</p>
+        <ol class="library" id="library"></ol>
+      </section>
+
       <!-- 18:15 -->
-      <section class="ch" id="log" data-ch="3">
+      <section class="ch" id="log" data-ch="4">
         <p class="stamp"><time>18:15</time><span>Logbook</span></p>
-        <h2 class="h2">Every book on the shelf is a <em>chapter</em>.</h2>
+        <h2 class="h2">Every frame on the wall is a <em>chapter</em>.</h2>
+        <p class="aside">Hover a role to light up its frame above the desk.</p>
         <ol class="log" id="log-list">
           <li class="job is-open">
             <button class="job-row" aria-expanded="true" aria-controls="j0">
@@ -156,7 +166,7 @@
       </section>
 
       <!-- 22:30 -->
-      <section class="ch ch--contact" id="contact" data-ch="4">
+      <section class="ch ch--contact" id="contact" data-ch="5">
         <p class="stamp"><time>22:30</time><span>Contact</span></p>
         <h2 class="hello">Say<br>hello</h2>
         <p class="lede">Open to freelance projects and full-time roles from Month 2026.</p>

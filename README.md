@@ -5,7 +5,7 @@ Six interactive portfolio directions:
 | Design | Folder | Idea |
 | --- | --- | --- |
 | **1 · Press Start** | `/` (root) | A game HUD: playable platformer hero, coins, achievements, quest log, inventory. |
-| **2 · Studio Hours** | `/v2/` | A live isometric pixel room beside an editorial column. Scrolling moves the clock from morning to night, and the camera and character follow each section. |
+| **2 · Studio Hours** | `/v2/` | A detailed 32-bit isometric studio beside an editorial column. Scrolling moves the clock from morning to night; books on the shelf are your knowledge, frames on the wall are your jobs. |
 | **3 · Pocket Planet** | `/v3/` | 64-bit era (N64 / PS1) low-poly 3D. One screen: a tiny planet you spin, with a house, gallery, tower and mailbox as the sections. |
 | **4 · Riso Press** | `/v4/` | No pixels: a two-ink risograph zine with physics type, halftones, generative posters and swappable ink sets. |
 | **5 · Nav Console** | `/v5/` | Calm sci-fi one-pager: a slowly rotating 3D galaxy behind the intro, then clean About, Work, Experience and Contact sections. |
@@ -64,14 +64,17 @@ assets/js/main.js
 
 Open `v2/index.html` (or `http://localhost:8000/v2/` when serving the folder).
 
-- **Scroll = time of day.** 07:30 intro → 10:00 about → 13:30 work → 18:15 logbook → 22:30 contact. The sky, sunbeam, lighting, lamp and window change continuously.
-- **Camera + character.** The camera moves to the desk, monitor, bookshelf and corkboard for each section, and the character walks there.
-- **Everything in the room is clickable:** monitor, bookshelf (each highlighted book is a job), window (toggles rain), lamp, coffee, plant (water it three times), poster, cat (pet it), and the character.
-- **Work list.** Hovering a project shows its pixel screen on the in-room monitor and in a floating preview.
-- **Contact.** The note form shows a live sticky-note preview and pins it to the corkboard in the room. It is a demo, so nothing is sent.
-- The room is drawn by a small custom isometric rasterizer on `<canvas>` (no libraries), with an ID buffer for hover and click picking.
+A detailed 32-bit style isometric studio beside an editorial column. Scrolling moves the clock from morning to night.
 
-Edit content in `v2/index.html`; projects live in the `PROJECTS` array at the top of `v2/main.js`.
+- **Scroll = time of day.** 07:30 intro → 10:00 about → 13:00 work → 15:45 library → 18:15 logbook → 22:30 contact. The sky, sunbeam (with floating dust), lighting, lamp, window and wall clock all follow.
+- **32-bit rendering.** A custom isometric rasterizer at 512×384 with textured surfaces (wood grain floor, wallpaper and wainscoting, rug, cork, curtains), hue-shifted shading ramps, rim light, ambient occlusion, soft shadows and outlined procedural sprites for the character, cat and plant.
+- **The library.** Every colour on the bookshelf is a subject you know (edit `KNOWLEDGE` in `main.js`). Hover a subject in the page or click its books in the room: the books slide out and the matching card opens.
+- **Framed jobs.** Each frame above the desk is a role in the logbook; hovering a role lights up its frame.
+- **Everything in the room is clickable:** monitor (work), shelf and books (library), frames (jobs), window (rain), wall clock, lamp, coffee, plant (water it three times), cat, and the character.
+- **Work list.** Hovering a project shows it on the in-room monitor and in a floating preview.
+- **Contact.** The note form previews a sticky note and pins it to the corkboard. It is a demo, so nothing is sent.
+
+Edit the page text in `v2/index.html`; projects, knowledge subjects and job frame colours live at the top of `v2/main.js`.
 
 ---
 
