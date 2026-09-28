@@ -256,7 +256,7 @@
   const PANTS = ['#e4ddcf', '#c8bfae', '#a39a88'];
   const SNEAK = ['#ffffff', '#ececf1', '#bfc2cd', '#8e92a0'];
   const ACC = '#ff6a3d', TEE_PRINT = '#f4f1ea';
-  const FRAME = '#22222b', LENS = '#c4e6ff';
+  const FRAME = '#23252e', FRAME2 = '#4a4e5c', LENS_TINT = '#f2e2da', GLARE = ['#5f9dff', '#bfe0ff'];
   const figCache = new Map();
   function curls(x, cx, top, back) {
     // a cluster of curls with light catches reads as textured curly hair
@@ -342,16 +342,18 @@
         r(6, oy + 3, 2, 4, HAIR[2]); r(19, oy + 3, 2, 3, HAIR[3]);
       }
       if (!back) {
-        // blue-light glasses
-        r(8, oy + 6, 4, 1, FRAME); r(14, oy + 6, 4, 1, FRAME);
-        r(8, oy + 9, 4, 1, FRAME); r(14, oy + 9, 4, 1, FRAME);
-        r(8, oy + 6, 1, 4, FRAME); r(11, oy + 6, 1, 4, FRAME); r(14, oy + 6, 1, 4, FRAME); r(17, oy + 6, 1, 4, FRAME);
-        r(12, oy + 7, 2, 1, FRAME);
-        r(6, oy + 7, 2, 1, FRAME); r(18, oy + 7, 2, 1, FRAME);
-        r(9, oy + 7, 2, 2, LENS); r(15, oy + 7, 2, 2, LENS);
-        r(10, oy + 7, 1, 2, '#1b1b22'); r(16, oy + 7, 1, 2, '#1b1b22');
-        r(9, oy + 7, 1, 1, '#ffffff'); r(15, oy + 7, 1, 1, '#ffffff');
-        r(9, oy + 5, 2, 1, HAIR[2]); r(15, oy + 5, 2, 1, HAIR[2]);
+        // screen glasses: thin dark rectangular metal frames, clear lenses, blue screen glare
+        r(9, oy + 4, 2, 1, HAIR[2]); r(15, oy + 4, 2, 1, HAIR[2]);
+        [7, 14].forEach((lx) => {
+          r(lx, oy + 6, 6, 1, FRAME);
+          r(lx, oy + 7, 1, 3, FRAME2); r(lx + 5, oy + 7, 1, 3, FRAME2);
+          r(lx + 1, oy + 9, 4, 1, FRAME2);
+          r(lx + 1, oy + 7, 4, 2, LENS_TINT);
+          r(lx + 2, oy + 8, 1, 1, '#1b1b22');
+          r(lx + 3, oy + 7, 2, 1, GLARE[0]); r(lx + 4, oy + 7, 1, 1, GLARE[1]);
+        });
+        r(13, oy + 7, 1, 1, FRAME);
+        r(5, oy + 7, 2, 1, FRAME2); r(20, oy + 7, 1, 1, FRAME2);
         r(13, oy + 10, 1, 1, SKIN[2]);
         r(11, oy + 12, 3, 1, SKIN[3]); r(14, oy + 11, 1, 1, SKIN[3]);
         r(8, oy + 11, 1, 1, '#f3b3a3'); r(18, oy + 11, 1, 1, '#f3b3a3');
@@ -387,7 +389,7 @@
       x.fillStyle = HAIR[2];
       [[35, -7], [38, -8], [41, -7], [34, -4], [36, -5]].forEach(([a, b]) => { x.beginPath(); x.arc(a, sh + b, 2.4, 0, Math.PI * 2); x.fill(); });
       r(36, sh - 10, 2, 1, HAIR[0]); r(40, sh - 9, 1, 1, HAIR[1]);
-      r(39, sh - 4, 3, 1, FRAME); r(41, sh - 4, 1, 2, LENS); r(38, sh - 4, 1, 1, FRAME);
+      r(38, sh - 5, 4, 1, FRAME); r(41, sh - 4, 1, 2, FRAME2); r(40, sh - 4, 1, 1, GLARE[0]); r(36, sh - 4, 2, 1, FRAME2);
     });
     pushCache.set(frame, s);
     return s;
