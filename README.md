@@ -8,7 +8,7 @@ Five interactive portfolio directions:
 | **2 · Studio Hours** | `/v2/` | A live isometric pixel room beside an editorial column. Scrolling moves the clock from morning to night, and the camera and character follow each section. |
 | **3 · Pocket Planet** | `/v3/` | 64-bit era (N64 / PS1) low-poly 3D. One screen: a tiny planet you spin, with a house, gallery, tower and mailbox as the sections. |
 | **4 · Riso Press** | `/v4/` | No pixels: a two-ink risograph zine with physics type, halftones, generative posters and swappable ink sets. |
-| **5 · Nav Console** | `/v5/` | Futuristic sci-fi interface: a 3D star map where systems are sections and planets are projects and jobs, with a HUD, radar and command line. |
+| **5 · Nav Console** | `/v5/` | Calm sci-fi one-pager: a slowly rotating 3D galaxy behind the intro, then clean About, Work, Experience and Contact sections. |
 
 ---
 
@@ -109,14 +109,15 @@ Edit content in `v4/index.html`; the name, projects and tools are at the top of 
 
 ## Design 5 — Nav Console (`v5/`)
 
-Open `v5/index.html` (or `http://localhost:8000/v5/`). Uses Three.js r128 (cdnjs) plus the r128 bloom post-processing files (jsdelivr).
+Open `v5/index.html` (or `http://localhost:8000/v5/`). Uses Three.js r128 from cdnjs.
 
-- **3D star map.** A 16,000-star spiral galaxy over a tactical polar grid with a radar sweep, plus bloom glow. Drag to orbit, scroll to zoom; the map slowly drifts when idle.
-- **Systems are sections.** About, Work, Experience and Contact are star systems linked by flowing hyperlanes. Click one (or press 1–4) and the camera flies there while a dossier panel opens.
-- **Planets are content.** Six planets orbit Work (one per project) and four orbit Experience (one per job). Hover for a target-lock reticle; click a project planet for a live holographic scan and project details.
-- **HUD.** Pilot card, systems list with live distances, proximity radar that tracks the camera heading, sector/heading/range readouts, UTC clock, event log, SFX toggle (off by default) and an FX toggle.
-- **Command line.** Press `/` and type `help`, `about`, `work`, `open 3`, `exp`, `contact`, `home`, `sound on`, `fx off`, `whoami` or `clear`. Arrow keys recall history.
-- **Contact.** A transmission form with a live oscilloscope. It is a demo, so nothing is sent.
-- Works without WebGL too: the HUD, dossiers and command line still function.
+A calm, sci-fi styled one-page site: dark space, ice-cyan accents, thin lines.
 
-Edit content in `v5/index.html` (dossier templates) and the `SYSTEMS`, `PROJECTS` and `JOBS` arrays at the top of `v5/main.js`.
+- **Hero.** A slowly rotating 3D spiral galaxy behind your name, drifting gently with the mouse.
+- **About.** Intro text, plus a panel with stats, skill bars and tools.
+- **Work.** Six project cards with animated line-art previews on hover. Click a card for details.
+- **Experience.** A simple vertical timeline.
+- **Contact.** Email with a copy button, social links and a form. The form is a demo, so nothing is sent.
+- Normal page scroll and a sticky nav; phones get a Menu button.
+
+Edit content in `v5/index.html`; projects live in the `PROJECTS` array at the top of `v5/main.js`.

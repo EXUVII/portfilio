@@ -4,193 +4,158 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nav Console Portfolio</title>
-<meta name="description" content="Portfolio of Your Name as a starship navigation console. Placeholder content.">
+<meta name="description" content="Portfolio of Your Name. A calm, sci-fi styled one-page portfolio. Placeholder content.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="space" id="space">
-  <canvas id="gl" aria-label="A 3D star map. Each glowing system is a section of the portfolio. Drag to orbit, scroll to zoom, click a system to travel there."></canvas>
-  <div class="vignette" aria-hidden="true"></div>
-</div>
-<div class="labels" id="labels" aria-hidden="true"></div>
-<div class="reticle" id="reticle" aria-hidden="true" hidden><i></i><i></i><i></i><i></i><span id="reticle-txt"></span></div>
-
-<div class="hud">
-  <!-- TOP BAR -->
-  <header class="top boot" style="--d:0">
-    <a class="brand" href="#" id="home" aria-label="Back to overview">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-txt"><b>Your Name</b><small class="mono">Portfolio OS · v5.0</small></span>
-    </a>
-    <div class="readouts mono" aria-hidden="true">
-      <div><small>Sector</small><b id="ro-sector">Core</b></div>
-      <div><small>Heading</small><b id="ro-heading">000°</b></div>
-      <div><small>Range</small><b id="ro-range">00.0 ly</b></div>
-      <div><small>Signal</small><b class="bars" id="ro-signal"><i></i><i></i><i></i><i></i><i></i></b></div>
-    </div>
-    <div class="top-right">
-      <div class="clock mono"><small>UTC</small><b id="utc">00:00:00</b></div>
-      <button class="tbtn mono" id="btn-sound" aria-pressed="false">SFX Off</button>
-      <button class="tbtn mono" id="btn-fx" aria-pressed="true">FX On</button>
-      <button class="tbtn tbtn--hot mono" id="btn-contact">Transmit</button>
-    </div>
-  </header>
-
-  <!-- LEFT COLUMN -->
-  <aside class="left">
-    <section class="card pilot boot" style="--d:1" aria-label="Pilot">
-      <p class="lbl mono">Pilot ID</p>
-      <div class="pilot-row">
-        <span class="badge" aria-hidden="true">YN</span>
-        <div>
-          <p class="pilot-role">Role title</p>
-          <p class="pilot-loc mono">City, Country</p>
-        </div>
-      </div>
-      <dl class="kv mono">
-        <div><dt>Status</dt><dd><span class="live"></span>Available · 2026</dd></div>
-        <div><dt>Current</dt><dd>Company Name</dd></div>
-        <div><dt>Coords</dt><dd id="coords">00.000°N 00.000°E</dd></div>
-      </dl>
-    </section>
-
-    <nav class="card systems boot" style="--d:2" aria-label="Systems">
-      <p class="lbl mono">Systems</p>
-      <button class="sys" data-key="about"><kbd>1</kbd><span class="sys-code mono">SYS-01</span><span class="sys-name">About</span><span class="sys-dist mono" data-dist="about">--</span></button>
-      <button class="sys" data-key="work"><kbd>2</kbd><span class="sys-code mono">SYS-02</span><span class="sys-name">Work</span><span class="sys-dist mono" data-dist="work">--</span></button>
-      <button class="sys" data-key="exp"><kbd>3</kbd><span class="sys-code mono">SYS-03</span><span class="sys-name">Experience</span><span class="sys-dist mono" data-dist="exp">--</span></button>
-      <button class="sys sys--warm" data-key="contact"><kbd>4</kbd><span class="sys-code mono">SYS-04</span><span class="sys-name">Contact</span><span class="sys-dist mono" data-dist="contact">--</span></button>
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span>Your Name</a>
+    <nav class="links" id="links" aria-label="Sections">
+      <a href="#about">About</a>
+      <a href="#work">Work</a>
+      <a href="#experience">Experience</a>
+      <a href="#contact" class="btn btn--small">Get in touch</a>
     </nav>
+    <button class="menu-btn mono" id="menu-btn" aria-expanded="false" aria-controls="links">Menu</button>
+  </div>
+</header>
 
-    <section class="card radar-card boot" style="--d:3" aria-hidden="true">
-      <p class="lbl mono">Proximity scan</p>
-      <canvas id="radar" width="220" height="220"></canvas>
-    </section>
-  </aside>
-
-  <!-- HERO (overview) -->
-  <section class="hero boot" style="--d:2" id="hero">
-    <p class="kicker mono"><span class="live"></span>Transmission incoming</p>
-    <h1 class="hero-title">Your Name</h1>
-    <p class="hero-sub">Role title. I design and build interfaces for what comes next. Pick a system to begin, or type <code>help</code> below.</p>
-    <button class="cta" id="begin">Begin exploring <span aria-hidden="true">&rarr;</span></button>
+<main id="top">
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <canvas id="galaxy" aria-hidden="true"></canvas>
+    <div class="hero-fade" aria-hidden="true"></div>
+    <div class="wrap hero-inner">
+      <p class="kicker mono"><span class="live" aria-hidden="true"></span>Available for work &middot; 2026</p>
+      <h1 class="hero-title">Your Name</h1>
+      <p class="hero-sub">Role title. I design and build clear, fast interfaces for products that feel like the future.</p>
+      <div class="hero-actions">
+        <a class="btn" href="#work">View my work</a>
+        <a class="btn btn--ghost" href="#contact">Contact me</a>
+      </div>
+    </div>
+    <a class="scroll mono" href="#about" aria-label="Scroll to About"><span></span>Scroll</a>
   </section>
 
-  <!-- DOSSIER -->
-  <aside class="dossier" id="dossier" hidden aria-live="polite">
-    <div class="dossier-head">
-      <p class="mono" id="dossier-code">SYS-01 // Dossier</p>
-      <button class="x" id="dossier-close" aria-label="Close dossier">&times;</button>
+  <!-- ============ ABOUT ============ -->
+  <section class="sec" id="about">
+    <div class="wrap">
+      <p class="sec-label mono"><span>01</span> About</p>
+      <div class="about">
+        <div>
+          <h2 class="sec-title">Hi, I&rsquo;m Your Name.</h2>
+          <p class="lead">A short intro statement. One or two lines about who you are and the kind of work you love to make.</p>
+          <p>A longer paragraph for your story: where you started, what you care about, and how you like to work with teams. This is placeholder copy to show how a real paragraph sits in the layout.</p>
+        </div>
+        <div class="panel">
+          <div class="stats">
+            <div><b>8</b><span class="mono">Years</span></div>
+            <div><b>40+</b><span class="mono">Projects</span></div>
+            <div><b>12</b><span class="mono">Teams</span></div>
+          </div>
+          <ul class="skills">
+            <li><span>Interface design</span><i style="--v:92%"></i></li>
+            <li><span>Frontend engineering</span><i style="--v:88%"></i></li>
+            <li><span>Motion &amp; interaction</span><i style="--v:78%"></i></li>
+            <li><span>3D &amp; WebGL</span><i style="--v:70%"></i></li>
+          </ul>
+          <ul class="chips mono"><li>Figma</li><li>React</li><li>TypeScript</li><li>Three.js</li><li>Blender</li><li>Framer</li></ul>
+        </div>
+      </div>
     </div>
-    <div class="dossier-body" id="dossier-body"></div>
-  </aside>
+  </section>
 
-  <!-- BOTTOM -->
-  <footer class="bottom boot" style="--d:4">
-    <div class="log mono" id="log" aria-live="polite"></div>
-    <form class="cmd mono" id="cmd" autocomplete="off">
-      <label for="cmd-input" class="prompt">&gt;</label>
-      <input id="cmd-input" name="cmd" placeholder="Type a command · try help" spellcheck="false" autocapitalize="off">
-      <kbd>/</kbd>
-    </form>
-  </footer>
+  <!-- ============ WORK ============ -->
+  <section class="sec" id="work">
+    <div class="wrap">
+      <p class="sec-label mono"><span>02</span> Work</p>
+      <h2 class="sec-title">Selected projects</h2>
+      <ul class="grid" id="grid"></ul>
+    </div>
+  </section>
 
-  <!-- MOBILE NAV -->
-  <nav class="mnav" aria-label="Systems">
-    <button class="msys" data-key="about">About</button>
-    <button class="msys" data-key="work">Work</button>
-    <button class="msys" data-key="exp">Experience</button>
-    <button class="msys msys--warm" data-key="contact">Contact</button>
-  </nav>
-</div>
+  <!-- ============ EXPERIENCE ============ -->
+  <section class="sec" id="experience">
+    <div class="wrap">
+      <p class="sec-label mono"><span>03</span> Experience</p>
+      <h2 class="sec-title">Where I&rsquo;ve worked</h2>
+      <ol class="timeline">
+        <li>
+          <p class="mono t-date">2024 &ndash; Now</p>
+          <div><h3>Job Title</h3><p class="t-co">Company Name &middot; City</p><p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p></div>
+        </li>
+        <li>
+          <p class="mono t-date">2021 &ndash; 2024</p>
+          <div><h3>Job Title</h3><p class="t-co">Company Name &middot; City</p><p>Two or three sentences on the role and a key achievement.</p></div>
+        </li>
+        <li>
+          <p class="mono t-date">2019 &ndash; 2021</p>
+          <div><h3>Job Title</h3><p class="t-co">Company Name &middot; City</p><p>Two or three sentences on the role and a key achievement.</p></div>
+        </li>
+        <li>
+          <p class="mono t-date">2015 &ndash; 2019</p>
+          <div><h3>Degree or first role</h3><p class="t-co">School or Company &middot; City</p><p>Where it started. A sentence or two on your studies or first job.</p></div>
+        </li>
+      </ol>
+    </div>
+  </section>
 
-<!-- ============ DOSSIER TEMPLATES ============ -->
-<template id="tpl-about">
-  <p class="d-kicker mono">Pilot dossier</p>
-  <h2 class="d-title">Hi, I&rsquo;m Your Name.</h2>
-  <p class="d-lead">A short intro statement. One or two lines about who you are and the kind of work you love to make.</p>
-  <p>A longer paragraph for your story: where you started, what you care about, and how you like to work with teams. This is placeholder copy to show how a real paragraph sits in the panel.</p>
-  <div class="stats">
-    <div><b class="count" data-to="8">0</b><span class="mono">Years active</span></div>
-    <div><b class="count" data-to="40" data-suffix="+">0</b><span class="mono">Projects shipped</span></div>
-    <div><b class="count" data-to="12">0</b><span class="mono">Teams</span></div>
-    <div><b class="count" data-to="3">0</b><span class="mono">Awards</span></div>
+  <!-- ============ CONTACT ============ -->
+  <section class="sec sec--contact" id="contact">
+    <div class="wrap">
+      <p class="sec-label mono"><span>04</span> Contact</p>
+      <div class="contact">
+        <div>
+          <h2 class="sec-title">Let&rsquo;s build something together.</h2>
+          <p class="lead">Open to freelance projects and full-time roles from Month 2026.</p>
+          <div class="email"><span id="email">hello@yourname.com</span><button class="btn btn--small" id="copy">Copy</button></div>
+          <ul class="social mono">
+            <li><a href="#" data-placeholder>LinkedIn</a></li>
+            <li><a href="#" data-placeholder>GitHub</a></li>
+            <li><a href="#" data-placeholder>Dribbble</a></li>
+          </ul>
+        </div>
+        <form class="panel form" id="form">
+          <div class="field"><label class="mono" for="f-name">Name</label><input id="f-name" name="name" autocomplete="name" required></div>
+          <div class="field"><label class="mono" for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
+          <div class="field"><label class="mono" for="f-msg">Message</label><textarea id="f-msg" name="message" rows="4" required></textarea></div>
+          <button class="btn" type="submit">Send message</button>
+          <p class="form-note mono" id="form-note" role="status"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner mono">
+    <p>&copy; <span id="year">2026</span> Your Name</p>
+    <a href="#top">Back to top &uarr;</a>
   </div>
-  <h3 class="d-sub mono">Capabilities</h3>
-  <ul class="caps">
-    <li><span>Interface design</span><i style="--v:92"></i><b class="mono">92</b></li>
-    <li><span>Frontend engineering</span><i style="--v:88"></i><b class="mono">88</b></li>
-    <li><span>Motion &amp; interaction</span><i style="--v:78"></i><b class="mono">78</b></li>
-    <li><span>3D &amp; WebGL</span><i style="--v:70"></i><b class="mono">70</b></li>
-    <li><span>Product strategy</span><i style="--v:64"></i><b class="mono">64</b></li>
-  </ul>
-  <h3 class="d-sub mono">Toolkit</h3>
-  <ul class="chips mono"><li>Figma</li><li>React</li><li>TypeScript</li><li>Three.js</li><li>GLSL</li><li>Blender</li><li>Framer</li><li>After Effects</li></ul>
-</template>
+</footer>
 
-<template id="tpl-work">
-  <p class="d-kicker mono">6 planets in orbit</p>
-  <h2 class="d-title">Selected work</h2>
-  <p>Each planet orbiting this system is a project. Pick one here or click it in the map.</p>
-  <ol class="plist" id="plist"></ol>
-</template>
-
-<template id="tpl-exp">
-  <p class="d-kicker mono">Flight log</p>
-  <h2 class="d-title">Experience</h2>
-  <p>Every planet in this system is a role, oldest on the outer orbit.</p>
-  <ol class="flog">
-    <li class="is-open" data-i="0">
-      <button class="flog-row" aria-expanded="true"><span class="mono flog-date">2024 &ndash; Now</span><span class="flog-role">Job Title</span><span class="flog-co">Company Name · City</span></button>
-      <div class="flog-body"><div><p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p><ul><li>Key achievement with a number.</li><li>Something you led, launched, or built.</li><li>A process or team you improved.</li></ul></div></div>
-    </li>
-    <li data-i="1">
-      <button class="flog-row" aria-expanded="false"><span class="mono flog-date">2021 &ndash; 2024</span><span class="flog-role">Job Title</span><span class="flog-co">Company Name · City</span></button>
-      <div class="flog-body"><div><p>Two or three sentences on the role.</p><ul><li>Key achievement with a number.</li><li>Something you led or launched.</li></ul></div></div>
-    </li>
-    <li data-i="2">
-      <button class="flog-row" aria-expanded="false"><span class="mono flog-date">2019 &ndash; 2021</span><span class="flog-role">Job Title</span><span class="flog-co">Company Name · City</span></button>
-      <div class="flog-body"><div><p>Two or three sentences on the role.</p><ul><li>Key achievement with a number.</li><li>Something you led or launched.</li></ul></div></div>
-    </li>
-    <li data-i="3">
-      <button class="flog-row" aria-expanded="false"><span class="mono flog-date">2015 &ndash; 2019</span><span class="flog-role">Degree or first role</span><span class="flog-co">School or Company · City</span></button>
-      <div class="flog-body"><div><p>Where it started. A sentence or two on your studies or first job.</p></div></div>
-    </li>
-  </ol>
-</template>
-
-<template id="tpl-contact">
-  <p class="d-kicker mono">Open channel</p>
-  <h2 class="d-title">Send a transmission.</h2>
-  <p class="d-lead">Open to freelance projects and full-time roles from Month 2026.</p>
-  <div class="email"><span class="mono" id="email">hello@yourname.com</span><button class="tbtn mono" id="copy">Copy</button></div>
-  <ul class="links mono">
-    <li><a href="#" data-placeholder>LinkedIn</a></li>
-    <li><a href="#" data-placeholder>GitHub</a></li>
-    <li><a href="#" data-placeholder>Dribbble</a></li>
-    <li><a href="#" data-placeholder>R&eacute;sum&eacute;</a></li>
-  </ul>
-  <form class="tx" id="tx">
-    <div class="field"><label class="mono" for="tx-name">Callsign</label><input id="tx-name" name="name" autocomplete="name" required></div>
-    <div class="field"><label class="mono" for="tx-email">Return frequency (email)</label><input id="tx-email" name="email" type="email" autocomplete="email" required></div>
-    <div class="field"><label class="mono" for="tx-msg">Message</label><textarea id="tx-msg" name="message" rows="4" required></textarea></div>
-    <canvas class="scope" id="scope" width="400" height="70" aria-hidden="true"></canvas>
-    <button class="cta" type="submit">Transmit <span aria-hidden="true">&rarr;</span></button>
-    <p class="tx-status mono" id="tx-status" role="status"></p>
-  </form>
-</template>
+<!-- Project details -->
+<dialog class="modal" id="modal" aria-labelledby="m-title">
+  <div class="modal-inner">
+    <button class="close" id="m-close" aria-label="Close">&times;</button>
+    <canvas class="holo" id="m-holo" width="720" height="400" aria-hidden="true"></canvas>
+    <div class="modal-body">
+      <p class="mono m-meta" id="m-meta"></p>
+      <h3 id="m-title"></h3>
+      <p id="m-desc"></p>
+      <dl class="specs mono" id="m-specs"></dl>
+      <a class="btn" href="#" data-placeholder>View case study</a>
+    </div>
+  </div>
+</dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script src="main.js"></script>
 </body>
 </html>
