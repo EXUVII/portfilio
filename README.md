@@ -66,9 +66,11 @@ Open `v2/index.html` (or `http://localhost:8000/v2/` when serving the folder).
 
 A detailed 32-bit style isometric studio beside an editorial column. Scrolling moves the clock from morning to night.
 
-- **Scroll = time of day.** 07:30 intro → 10:00 about → 13:00 work → 15:45 library → 18:15 logbook → 22:30 contact. The sky, sunbeam (with floating dust), lighting, lamp, window and wall clock all follow.
+- **Scroll = time of day.** 07:30 intro → 08:30 training → 10:00 about → 13:00 work → 15:45 library → 18:15 logbook → 22:30 contact. The sky, sunbeam (with floating dust), lighting, lamp, window and wall clock all follow.
 - **32-bit rendering.** A custom isometric rasterizer at 512×384 with textured surfaces (wood grain floor, wallpaper and wainscoting, rug, cork, curtains), hue-shifted shading ramps, rim light, ambient occlusion, soft shadows and outlined procedural sprites for the character, cat and plant.
 - **The library.** Every colour on the bookshelf is a subject you know (edit `KNOWLEDGE` in `main.js`). Hover a subject in the page or click its books in the room: the books slide out and the matching card opens.
+- **Training corner.** A workout mat in the morning sun with dumbbells, a kettlebell, a water bottle and a streak chart on the wall. In the Training chapter the character does push-ups; "Do a set with me" (or clicking the mat) runs a counted set of 10, and the page keeps a push-up counter. Stats and the 12-week streak grid are placeholders.
+- **The character.** High-top fade, bomber hoodie with an orange zip over a white tee, headphones round the neck, smartwatch, striped joggers and white sneakers, with walk, wave, idle-breathing, sitting, typing and push-up animations.
 - **Framed jobs.** Each frame above the desk is a role in the logbook; hovering a role lights up its frame.
 - **Everything in the room is clickable:** monitor (work), shelf and books (library), frames (jobs), window (rain), wall clock, lamp, coffee, plant (water it three times), cat, and the character.
 - **Work list.** Hovering a project shows it on the in-room monitor and in a floating preview.

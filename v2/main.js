@@ -45,9 +45,10 @@
     ['#ffd84d', '#1b1b22', '#e2502a', '#ffffff'], ['#e9e3f5', '#2a2140', '#8a5bff', '#ff7aa8'], ['#1b1f3a', '#f4f1ea', '#ff6a3d', '#46c2ff'],
   ];
 
-  const CH_HOURS = [7.5, 10, 13, 15.75, 18.3, 22.5, 23.75];
+  const CH_HOURS = [7.25, 8.5, 10.25, 13, 15.75, 18.3, 22.5, 23.75];
   const BUBBLES = [
     'Morning. Coffee first, then pixels.',
+    'Push-ups first. Every single day.',
     'Welcome to my desk. Poke around.',
     'Hover a project to put it on screen.',
     'Every colour on this shelf is a subject.',
@@ -146,6 +147,20 @@
       flush(x1);
     });
   }
+  // Textured polygon on a floor-parallel plane (for rotated things like the mat)
+  function texFloor(worldPts, z, fn) {
+    scan(worldPts.map(([x, y]) => P(x, y, z)), (y, x0, x1) => {
+      let runC = null, runX = x0;
+      const sy = y + 0.5 - OY, s2 = 2 * (sy + z);
+      const flush = (x) => { if (runC) { G.fillStyle = runC; G.fillRect(runX, y, x - runX, 1); if (curId) IDS.fill(curId, y * WW + runX, y * WW + x); } };
+      for (let x = x0; x < x1; x++) {
+        const sx = x + 0.5 - OX;
+        const col = fn((sx + s2) / 2, (s2 - sx) / 2);
+        if (col !== runC) { flush(x); runC = col; runX = x; }
+      }
+      flush(x1);
+    });
+  }
   const dot = (x, y, col) => {
     x = Math.floor(x); y = Math.floor(y);
     if (x < 0 || y < 0 || x >= WW || y >= WH) return;
@@ -233,71 +248,130 @@
   }
 
   // The character: 24x54, drawn part by part with 3-4 tone ramps
-  const SKIN = ['#ffdcbc', '#f2c29c', '#dc9c76', '#b3745a'];
-  const HAIR = ['#7a5543', '#44302a', '#2a1b17'];
-  const SHIRT = ['#ff8a5c', '#e2502a', '#b33a1c', '#7e2a1a'];
-  const PANTS = ['#5a6ca3', '#3b4a82', '#29335f'];
-  const SHOE = ['#56566a', '#2a2a34'];
+  // The character: high-top fade, bomber hoodie with an orange zip over a white tee,
+  // headphones round the neck, smartwatch, striped joggers, white sneakers.
+  const SKIN = ['#ffd6b3', '#eab48c', '#cf9068', '#a86a4c'];
+  const HAIR = ['#8a7cf0', '#4a3f7a', '#1c1726', '#0f0c16'];
+  const HOOD = ['#4a4d63', '#2c2e3c', '#1d1e28', '#131419'];
+  const JOG = ['#626882', '#40455a', '#2b2e3d'];
+  const ACC = '#ff6a3d', TEE = '#f4f1ea', PHONES = ['#9be8ff', '#46c2ff', '#1f7fb0'];
   const figCache = new Map();
-  function figure({ view = 'front', walk = 0, sit = false, typing = 0, wave = false }) {
-    const key = `${view}${walk}${sit}${typing}${wave}`;
+  function figure({ view = 'front', walk = 0, sit = false, typing = 0, wave = false, bob = 0 }) {
+    const key = `${view}${walk}${sit}${typing}${wave}${bob}`;
     if (figCache.has(key)) return figCache.get(key);
-    const H = sit ? 38 : 54;
-    const s = spriteCanvas(24, H, (x) => {
+    const H = sit ? 42 : 60;
+    const s = spriteCanvas(26, H, (x) => {
       const r = (a, b, w, h, c) => { x.fillStyle = c; x.fillRect(a, b, w, h); };
       const back = view === 'back';
-      // legs + shoes
+      const oy = 3 + bob; // headroom for the hair, plus breathing bob
+      // legs: joggers with a side stripe, white sneakers with orange soles
       if (!sit) {
         const lo = walk === 1 ? -2 : walk === 2 ? 1 : 0, ro = walk === 1 ? 1 : walk === 2 ? -2 : 0;
-        [[7, lo], [13, ro]].forEach(([lx, off], k) => {
-          r(lx, 35 + Math.min(0, off), 4, 14 - Math.min(0, off) + Math.max(0, off), PANTS[1]);
-          r(lx + 3, 35, 1, 14 + Math.max(0, off), PANTS[2]);
-          if (k === 0) r(lx, 36, 1, 10, PANTS[0]);
-          r(lx - 1, 49 + off, 6, 3, SHOE[1]);
-          r(lx - 1, 49 + off, 5, 1, SHOE[0]);
+        [[7, lo, 0], [14, ro, 1]].forEach(([lx, off, k]) => {
+          r(lx, 39, 5, 12 + Math.max(0, off), JOG[1]);
+          r(lx + (k ? 0 : 4), 39, 1, 12 + Math.max(0, off), JOG[2]);
+          r(lx + (k ? 4 : 0), 40, 1, 10 + Math.max(0, off), '#e8e6f0');
+          r(lx, 49 + off, 5, 2, JOG[2]);
+          r(lx - 1, 51 + off, 7, 3, '#f4f4f6');
+          r(lx - 1, 51 + off, 7, 1, '#ffffff');
+          r(lx + (k ? 5 : -1), 52 + off, 1, 2, '#c9ccd8');
+          r(lx - 1, 54 + off, 7, 1, ACC);
         });
       }
-      // arms
       const armY = sit ? 0 : walk === 1 ? 1 : walk === 2 ? -1 : 0;
-      const armL = (ax, ay) => {
-        r(ax, ay + 21, 3, 7, SHIRT[1]); r(ax, ay + 21, 1, 7, SHIRT[0]);
-        r(ax, ay + 28, 3, 5, SKIN[1]); r(ax + 2, ay + 28, 1, 5, SKIN[2]);
-        r(ax, ay + 33, 3, 2, SKIN[2]);
+      const arm = (ax, ay, dark) => {
+        r(ax, oy + ay + 18, 4, 12, dark ? HOOD[2] : HOOD[1]);
+        r(ax + (dark ? 3 : 0), oy + ay + 18, 1, 12, dark ? HOOD[3] : HOOD[0]);
+        r(ax, oy + ay + 29, 4, 1, HOOD[3]);
+        r(ax, oy + ay + 30, 4, 3, SKIN[1]); r(ax + (dark ? 3 : 0), oy + ay + 30, 1, 3, SKIN[2]);
       };
-      if (!sit || !typing) armL(3, armY);
-      if (wave) {
-        r(19, 14, 3, 7, SHIRT[1]); r(21, 14, 1, 7, SHIRT[2]);
-        r(19, 8, 3, 6, SKIN[1]); r(21, 8, 1, 6, SKIN[2]); r(19, 6, 3, 2, SKIN[0]);
-      } else if (!sit || !typing) armL(18, -armY);
-      else { r(3, 23, 3, 8, SHIRT[1]); r(18, 23, 3, 8, SHIRT[2]); }
-      // torso
-      r(6, 20, 13, 16, SHIRT[1]);
-      r(6, 21, 2, 14, SHIRT[0]);
-      r(15, 20, 4, 16, SHIRT[2]);
-      r(6, 35, 13, 1, SHIRT[3]);
-      x.clearRect(6, 20, 1, 1); x.clearRect(18, 20, 1, 1);
-      if (!back) { r(10, 20, 5, 2, SKIN[1]); r(11, 22, 3, 1, SKIN[2]); r(14, 25, 2, 2, SHIRT[2]); }
-      else r(10, 20, 5, 1, SHIRT[3]);
-      // neck + head
-      r(10, 17, 5, 3, SKIN[2]);
-      x.fillStyle = SKIN[1]; x.beginPath(); x.ellipse(12.5, 10.5, 6.5, 7.5, 0, 0, Math.PI * 2); x.fill();
-      r(16, 6, 3, 10, SKIN[2]); r(8, 16, 9, 2, SKIN[2]); r(7, 8, 2, 6, SKIN[0]);
-      r(5, 9, 1, 4, SKIN[2]); r(19, 9, 1, 4, SKIN[3]);
-      // hair
-      x.fillStyle = HAIR[1];
-      x.beginPath(); x.ellipse(12.5, 7, 7, 5.5, 0, Math.PI, 0); x.fill();
-      r(5.5, 6, 14, 3, HAIR[1]);
-      if (back) { x.beginPath(); x.ellipse(12.5, 10, 7, 7.5, 0, 0, Math.PI * 2); x.fill(); r(7, 15, 11, 2, HAIR[2]); r(15, 4, 4, 11, HAIR[2]); }
-      else { [8, 11, 14, 17].forEach((fx, k) => r(fx - 1, 8, 2, k % 2 ? 1 : 2, HAIR[1])); r(5, 7, 2, 5, HAIR[1]); r(18, 7, 2, 4, HAIR[2]); }
-      r(9, 2, 5, 1, HAIR[0]); r(8, 3, 3, 1, HAIR[0]);
+      // torso: broad-shouldered bomber hoodie
+      r(5, oy + 17, 16, 19, HOOD[1]);
+      r(5, oy + 18, 3, 17, HOOD[0]);
+      r(16, oy + 17, 5, 19, HOOD[2]);
+      r(5, oy + 34, 16, 2, HOOD[3]);
+      x.clearRect(5, oy + 17, 1, 1); x.clearRect(20, oy + 17, 1, 1);
       if (!back) {
-        r(9, 10, 1, 2, '#1b1b22'); r(15, 10, 1, 2, '#1b1b22');
-        r(9, 10, 1, 1, '#4a4a60');
-        r(8, 13, 2, 1, '#f29a8a'); r(15, 13, 2, 1, '#f29a8a');
-        r(12, 14, 2, 1, SKIN[3]);
+        r(11, oy + 17, 4, 8, TEE); r(11, oy + 24, 4, 1, '#d8d3c6');
+        r(12, oy + 25, 2, 9, ACC); r(12, oy + 25, 1, 9, '#ffb08f');
+        r(10, oy + 19, 1, 5, '#e8e6f0'); r(15, oy + 19, 1, 4, '#e8e6f0');
+        r(10, oy + 24, 1, 1, ACC); r(15, oy + 23, 1, 1, ACC);
+        r(6, oy + 27, 4, 1, HOOD[3]); r(16, oy + 27, 4, 1, HOOD[3]);
+      } else {
+        r(8, oy + 17, 10, 5, HOOD[0]); r(9, oy + 21, 8, 2, HOOD[1]); r(8, oy + 22, 10, 1, HOOD[3]);
+        r(12, oy + 26, 2, 6, HOOD[2]);
+      }
+      // arms (+ watch), wave or typing variants
+      if (sit && typing) { r(3, oy + 20, 3, 9, HOOD[1]); r(20, oy + 20, 3, 9, HOOD[2]); }
+      else {
+        arm(1, armY, false);
+        r(1, oy + armY + 29, 4, 1, PHONES[1]);
+        if (wave) {
+          r(21, oy + 9, 4, 10, HOOD[2]); r(24, oy + 9, 1, 10, HOOD[3]);
+          r(21, oy + 5, 4, 4, SKIN[1]); r(24, oy + 5, 1, 4, SKIN[2]); r(21, oy + 4, 3, 1, SKIN[0]);
+        } else arm(21, -armY, true);
+      }
+      // neck + headphones round the neck
+      r(10, oy + 14, 6, 3, SKIN[2]);
+      r(7, oy + 15, 12, 2, '#1b1b22');
+      if (!back) { r(6, oy + 15, 3, 4, PHONES[1]); r(17, oy + 15, 3, 4, PHONES[2]); r(6, oy + 15, 1, 2, PHONES[0]); }
+      else { r(6, oy + 15, 3, 3, PHONES[2]); r(17, oy + 15, 3, 3, PHONES[2]); }
+      // head
+      x.fillStyle = SKIN[1]; x.beginPath(); x.ellipse(13, oy + 8, 6.5, 7.5, 0, 0, Math.PI * 2); x.fill();
+      r(17, oy + 3, 3, 10, SKIN[2]); r(9, oy + 14, 9, 2, SKIN[2]); r(7.5, oy + 5, 2, 6, SKIN[0]);
+      r(5, oy + 6, 2, 4, SKIN[2]); r(20, oy + 6, 1, 4, SKIN[3]);
+      // high-top fade: tall textured top, faded sides, violet sheen
+      x.fillStyle = HAIR[2];
+      x.beginPath(); x.ellipse(13, oy + 1, 7, 5.5, 0, Math.PI, 0); x.fill();
+      r(6, oy - 3, 14, 5, HAIR[2]);
+      r(7, oy - 4, 12, 1, HAIR[2]);
+      for (let k = 0; k < 6; k++) r(7 + k * 2, oy - 5 + (k % 2), 1, 1, HAIR[2]);
+      r(6, oy + 1, 1, 4, '#3a2f3a'); r(19, oy + 1, 1, 4, '#3a2f3a');
+      if (back) {
+        x.fillStyle = HAIR[2]; x.beginPath(); x.ellipse(13, oy + 5, 7, 6, 0, 0, Math.PI * 2); x.fill();
+        r(7, oy + 8, 12, 4, '#3a2f3a'); r(8, oy + 11, 10, 2, SKIN[2]);
+        r(16, oy - 2, 3, 8, HAIR[3]);
+      } else r(7, oy + 2, 12, 1, HAIR[3]);
+      r(9, oy - 3, 5, 1, HAIR[1]); r(10, oy - 2, 2, 1, HAIR[0]); r(15, oy - 2, 2, 1, HAIR[1]);
+      if (!back) {
+        r(9, oy + 4, 3, 1, HAIR[3]); r(15, oy + 4, 3, 1, HAIR[3]);
+        r(10, oy + 6, 2, 2, '#1b1b22'); r(15, oy + 6, 2, 2, '#1b1b22');
+        r(10, oy + 6, 1, 1, '#ffffff'); r(15, oy + 6, 1, 1, '#ffffff');
+        r(13, oy + 8, 1, 2, SKIN[2]);
+        r(11, oy + 11, 4, 1, SKIN[3]); r(14, oy + 10, 1, 1, SKIN[3]);
       }
     });
     figCache.set(key, s);
+    return s;
+  }
+
+  // Push-up, side view (head on the right). frame 0 = arms straight, 1 = chest down.
+  const pushCache = new Map();
+  function pushupSprite(frame) {
+    if (pushCache.has(frame)) return pushCache.get(frame);
+    const s = spriteCanvas(46, 24, (x) => {
+      const r = (a, b, w, h, c) => { x.fillStyle = c; x.fillRect(a, b, w, h); };
+      const seg = (x0, y0, x1, y1, w, c) => { x.strokeStyle = c; x.lineWidth = w; x.lineCap = 'round'; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke(); };
+      const down = frame === 1;
+      const sh = down ? 16 : 10, hip = down ? 18 : 14;
+      // sneakers + legs
+      r(1, 19, 5, 3, '#f4f4f6'); r(1, 22, 5, 1, ACC);
+      seg(5, 19, 21, hip, 4.5, JOG[1]); seg(5, 18, 21, hip - 1.5, 1, '#e8e6f0');
+      // torso (hoodie) + orange zip line on the chest side
+      seg(21, hip, 33, sh, 6.5, HOOD[1]); seg(21, hip - 2.2, 33, sh - 2.2, 1.6, HOOD[0]);
+      seg(24, hip + 2.4, 32, sh + 2.4, 1, ACC);
+      // arm: straight or bent at the elbow
+      if (down) { seg(32, sh, 26, 20, 3.5, HOOD[2]); seg(26, 20, 32, 22, 3, HOOD[2]); r(31, 21, 3, 2, SKIN[1]); }
+      else { seg(32, sh + 1, 33, 21, 3.5, HOOD[2]); r(32, 20, 3, 3, SKIN[1]); r(32, 20, 3, 1, PHONES[1]); }
+      // headphones + head + high-top
+      r(33, sh - 1, 3, 3, PHONES[1]);
+      x.fillStyle = SKIN[1]; x.beginPath(); x.arc(38.5, sh - 3, 4, 0, Math.PI * 2); x.fill();
+      r(40, sh - 3, 2, 3, SKIN[2]);
+      x.fillStyle = HAIR[2]; x.beginPath(); x.ellipse(37.5, sh - 6, 4.8, 3, -0.25, 0, Math.PI * 2); x.fill();
+      r(35, sh - 9, 5, 2, HAIR[2]); r(36, sh - 9, 2, 1, HAIR[1]);
+      r(40, sh - 3, 1, 1, '#1b1b22');
+    });
+    pushCache.set(frame, s);
     return s;
   }
 
@@ -400,7 +474,7 @@
     catPull: KNOWLEDGE.map(() => 0), pullCat: -1, pullFromScene: false,
     water: 0, coffee: 3, pets: 0, userNote: null, t: 0,
   };
-  const hero = { x: 134, y: 28, path: [], sit: false, typing: false, face: false, flip: false, anim: 0, wave: 0, moving: false };
+  const hero = { x: 106, y: 24, pushup: false, pushT: 0, reps: 0, set: 0, path: [], sit: false, typing: false, face: false, flip: false, anim: 0, wave: 0, moving: false };
   const cat = { x: 120, y: 120, tx: 120, ty: 120, state: 'walk', timer: 2, flip: false, anim: 0, purr: 0 };
   let parts = [];
   const motes = Array.from({ length: 36 }, () => ({ t: Math.random(), u: Math.random(), w: Math.random(), s: 0.02 + Math.random() * 0.04 }));
@@ -575,11 +649,36 @@
       return tone(ch ? C.rugA : C.rugD, -0.05 + (hash(x, y) - 0.5) * 0.06);
     });
 
+    // training corner: a mat laid diagonally in front of the window
+    curId = 13;
+    const MC = [150, 52], SQ = Math.SQRT1_2;
+    const matPts = [[-32, -12], [32, -12], [32, 12], [-32, 12]].map(([a, b]) => [MC[0] + (a + b) * SQ, MC[1] + (b - a) * SQ]);
+    texFloor(matPts, 0.04, (x, y) => {
+      const a = ((x - MC[0]) - (y - MC[1])) * SQ, b = ((x - MC[0]) + (y - MC[1])) * SQ;
+      if (Math.abs(a) > 32 || Math.abs(b) > 12) return null;
+      const e = Math.min(32 - Math.abs(a), 12 - Math.abs(b));
+      if (e < 1.2) return tone('#2f8f83', 0.35);
+      if (e < 2.2) return tone('#1f6b62', -0.1);
+      return tone('#2f8f83', (Math.floor(a / 3) % 2 ? 0.04 : -0.04) + (b / 60));
+    });
+    // streak chart on the right wall, above the plant
+    tex('y', 0.02, 168, 190, 66, 94, (x, z) => {
+      const e = Math.min(x - 168, 190 - x, z - 66, 94 - z);
+      if (e < 1.4) return tone('#2b2f36', z > 93 ? 0.3 : 0);
+      if (z > 88) return tone(ACC, z > 92 ? 0.2 : 0);
+      const cx = Math.floor((x - 170) / 3), cz = Math.floor((87 - z) / 3);
+      if ((x - 170) % 3 < 2.1 && (87 - z) % 3 < 2.1 && cx < 6 && cz < 6) return tone('#2f8f83', cz * 6 + cx > 32 ? 0.45 : ((cx + cz) % 3 ? 0 : 0.2));
+      return tone('#fbf6ea', -0.05);
+    });
+    curId = 0;
+
     // furniture shadows (light comes through the window, so they fall toward the room)
     shadow(0, 36, 38, 112, 0.3, 7);
     shadow(12, 94, 0, 30, 0.34, 6);
     shadow(36, 58, 60, 82, 0.22, 5);
     shadow(170, 188, 6, 26, 0.26, 4);
+    shadow(176, 196, 62, 76, 0.24, 3);
+    shadow(128, 138, 84, 92, 0.2, 3);
   }
 
   function buildFurniture() {
@@ -640,6 +739,18 @@
     [[36, 66, 18, 3], [44, 58, 3, 18]].forEach(([x, y, w, dd]) => box(x, y, 1, w, dd, 2, C.metal));
     box(44.5, 66.5, 3, 2, 2, 11, C.metal);
     box(38, 60, 14, 16, 16, 3, C.chair);
+    // training gear: dumbbells, kettlebell, water bottle
+    curId = 13;
+    [[176, 62], [180, 70]].forEach(([dx, dy]) => {
+      box(dx, dy, 2, 12, 2, 2, '#9aa0ad', { top: 0.3 });
+      box(dx - 1, dy - 2, 0, 3, 6, 6, '#2b2f36');
+      box(dx + 10, dy - 2, 0, 3, 6, 6, '#2b2f36');
+    });
+    box(129, 85, 0, 8, 8, 8, ACC, { top: 0.25 });
+    box(131, 87, 8, 4, 4, 3, '#2b2f36');
+    box(190, 42, 0, 4, 4, 12, '#46c2ff', { top: 0.3 });
+    box(190.5, 42.5, 12, 3, 3, 2, '#f4f1ea');
+
     // plant pot
     curId = 9;
     box(172, 6, 0, 14, 14, 16, C.pot);
@@ -801,6 +912,14 @@
   }
   function drawHero() {
     curId = 6;
+    if (hero.pushup && !hero.path.length) {
+      const down = (hero.pushT % 1) > 0.5 ? 1 : 0;
+      const spr = pushupSprite(down);
+      softShadow(hero.x, hero.y, 18, 3);
+      const [sx, sy] = P(hero.x, hero.y, 0);
+      drawSpr(spr, sx - 24, sy - spr.h + 4);
+      return;
+    }
     if (hero.sit) {
       const spr = figure({ view: 'back', sit: true, typing: hero.typing && Math.floor(S.t * 6) % 2 ? 1 : 0 });
       const [sx, sy] = P(hero.x, hero.y, 17);
@@ -809,7 +928,8 @@
     }
     softShadow(hero.x, hero.y, 8, 2);
     const walk = hero.moving ? 1 + (Math.floor(hero.anim) % 2) : 0;
-    const spr = figure({ view: hero.face || hero.wave > 0 ? 'front' : 'back', walk, wave: hero.wave > 0 });
+    const bob = !hero.moving && Math.floor(S.t * 0.9) % 2 ? 1 : 0;
+    const spr = figure({ view: hero.face || hero.wave > 0 ? 'front' : 'back', walk, wave: hero.wave > 0, bob });
     const [sx, sy] = P(hero.x, hero.y, 0);
     drawSpr(spr, sx - 13, sy - spr.h + 2, hero.flip);
   }
@@ -935,7 +1055,8 @@
      SIMULATION
      --------------------------------------------------------- */
   const SPOTS = [
-    { x: 134, y: 28, sit: false, face: false },
+    { x: 106, y: 24, sit: false, face: false },
+    { x: 150, y: 50, pushup: true },
     { x: 45, y: 68, sit: true },
     { x: 45, y: 68, sit: true, typing: true },
     { x: 52, y: 34, sit: false, face: false },
@@ -949,16 +1070,26 @@
     pts.push({ x: 100, y: 104 });
     if (s.sit) pts.push({ x: 64, y: 84 });
     pts.push({ x: s.x, y: s.y });
-    hero.sit = false; hero.typing = false;
+    hero.sit = false; hero.typing = false; hero.pushup = false; hero.set = 0;
     hero.path = pts; hero.spot = s;
     if (reduced) { hero.path = []; arrive(s); }
   }
   function arrive(s) {
     hero.x = s.x; hero.y = s.y;
     hero.sit = !!s.sit; hero.typing = !!s.typing; hero.face = !!s.face; hero.flip = !!s.flip; hero.moving = false;
+    hero.pushup = !!s.pushup; hero.pushT = 0;
   }
   function updateHero(dt) {
     if (hero.wave > 0) hero.wave -= dt;
+    if (hero.pushup && !hero.path.length) {
+      const speed = hero.set > 0 ? 1.5 : 0.8;
+      const before = Math.floor(hero.pushT);
+      hero.pushT += dt * speed;
+      if (Math.floor(hero.pushT) > before && hero.set > 0) {
+        hero.reps++; hero.set--;
+        onRep(hero.reps);
+      }
+    }
     const next = hero.path[0];
     if (!next) { hero.moving = false; return; }
     const dx = next.x - hero.x, dy = next.y - hero.y, dist = Math.hypot(dx, dy);
@@ -1015,6 +1146,7 @@
   let VW = 1, VH = 1, dpr = 1;
   const CAMS = [
     { x: 256, y: 186, z: 1 },
+    { x: 350, y: 218, z: 2.5 },
     { x: 214, y: 150, z: 2.1 },
     { x: 194, y: 130, z: 3.1 },
     { x: 298, y: 120, z: 2.3 },
@@ -1074,7 +1206,7 @@
     navLinks.forEach((a) => a.classList.toggle('is-now', +a.dataset.ch === i));
     routeTo(i);
     say(BUBBLES[i], 3600, 900);
-    if (i !== 2) S.screenProject = -1;
+    if (i !== 3) S.screenProject = -1;
     else if (S.screenProject < 0) S.screenProject = 0;
   }
 
@@ -1096,7 +1228,7 @@
     if (bubble.hidden) return;
     bubbleT -= dt;
     if (bubbleT <= 0) { bubble.hidden = true; return; }
-    const [x, y] = toScreen(hero.x, hero.y, hero.sit ? 50 : 54);
+    const [x, y] = toScreen(hero.x, hero.y, hero.pushup && !hero.path.length ? 26 : hero.sit ? 52 : 60);
     bubble.style.left = `${x}px`; bubble.style.top = `${y}px`;
   }
 
@@ -1114,6 +1246,7 @@
     9: { name: 'Plant', hint: () => 'Water it', act: () => water() },
     10: { name: 'Desk', hint: () => 'About me', act: () => go('about') },
     11: { name: 'Chair', hint: () => 'About me', act: () => go('about') },
+    13: { name: 'Training corner', hint: () => (hero.pushup ? 'Do a set of 10' : 'See the routine'), act: () => { if (hero.pushup) startSet(); else go('training'); } },
     12: { name: 'Wall clock', hint: () => `It’s ${fmtTime(S.hour)}`, act: () => say(`It’s ${fmtTime(S.hour)}. Keep scrolling to pass the time.`, 2600) },
   };
   jobRows.forEach((row, j) => {
@@ -1272,6 +1405,36 @@
     row.addEventListener('mouseleave', () => { S.forced = 0; });
     btn.addEventListener('focus', () => { S.pullCat = i; });
   });
+
+  // training: streak grid, set button, counter
+  const streakEl = $('#streak');
+  streakEl.innerHTML = Array.from({ length: 12 }, (_, w) => `<div class="streak-week">${Array.from({ length: 7 }, (_, d) => {
+    const l = 45 + Math.round(((w * 7 + d) * 37 % 55));
+    return `<i style="--l:${l}%"${w === 11 && d === 6 ? ' class="today"' : ''}></i>`;
+  }).join('')}</div>`).join('');
+  const setBtn = $('#do-set'), countEl = $('#train-count b');
+  let pageReps = +(store.get('sh-reps') || 0);
+  countEl.textContent = pageReps;
+  function startSet(tries = 0) {
+    if (hero.set > 0) return;
+    if (!hero.pushup || hero.path.length) {
+      if (tries === 0) go('training');
+      if (tries < 5) setTimeout(() => startSet(tries + 1), 900);
+      return;
+    }
+    hero.set = 10; hero.pushT = Math.floor(hero.pushT) + 0.6; hero.reps = 0;
+    setBtn.disabled = true;
+    say('Let\u2019s go! Count with me.', 1400);
+  }
+  function onRep(n) {
+    pageReps++; countEl.textContent = pageReps; store.set('sh-reps', String(pageReps));
+    say(n === 10 ? '10! Set done. Same time tomorrow.' : String(n), n === 10 ? 2600 : 700);
+    if (hero.set <= 0) setBtn.disabled = false;
+  }
+  setBtn.addEventListener('click', () => startSet());
+  const trainingSec = $('#training');
+  trainingSec.addEventListener('mouseenter', () => { S.forced = 13; });
+  trainingSec.addEventListener('mouseleave', () => { S.forced = 0; });
 
   // logbook (framed jobs)
   function openJob(j, only = false) {
