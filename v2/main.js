@@ -248,97 +248,115 @@
   }
 
   // The character: 24x54, drawn part by part with 3-4 tone ramps
-  // The character: high-top fade, bomber hoodie with an orange zip over a white tee,
-  // headphones round the neck, smartwatch, striped joggers, white sneakers.
-  const SKIN = ['#ffd6b3', '#eab48c', '#cf9068', '#a86a4c'];
-  const HAIR = ['#8a7cf0', '#4a3f7a', '#1c1726', '#0f0c16'];
-  const HOOD = ['#4a4d63', '#2c2e3c', '#1d1e28', '#131419'];
-  const JOG = ['#626882', '#40455a', '#2b2e3d'];
-  const ACC = '#ff6a3d', TEE = '#f4f1ea', PHONES = ['#9be8ff', '#46c2ff', '#1f7fb0'];
+  // The character: light skin, curly hair, blue-light glasses,
+  // oversized washed-black tee, baggy stone pants, chunky white sneakers.
+  const SKIN = ['#ffeede', '#f9d9c2', '#e8b89c', '#c99178'];
+  const HAIR = ['#a07a62', '#6a4a39', '#43291e', '#281810'];
+  const TEE = ['#55556a', '#34343f', '#24242d', '#18181f'];
+  const PANTS = ['#e4ddcf', '#c8bfae', '#a39a88'];
+  const SNEAK = ['#ffffff', '#ececf1', '#bfc2cd', '#8e92a0'];
+  const ACC = '#ff6a3d', TEE_PRINT = '#f4f1ea';
+  const FRAME = '#22222b', LENS = '#c4e6ff';
   const figCache = new Map();
+  function curls(x, cx, top, back) {
+    // a cluster of curls with light catches reads as textured curly hair
+    const spots = back
+      ? [[7, 3], [10, 1], [13, 0], [16, 1], [19, 3], [6, 6], [20, 6], [8, 8], [12, 7], [17, 8], [6, 10], [20, 10], [9, 12], [13, 12], [17, 12], [10, 5], [15, 4]]
+      : [[7, 3], [10, 1], [13, 0], [16, 1], [19, 3], [6, 6], [20, 6], [9, 4], [12, 3], [15, 4], [18, 5], [8, 6], [17, 7]];
+    x.fillStyle = HAIR[2];
+    spots.forEach(([a, b]) => { x.beginPath(); x.arc(a + cx - 13, b + top, 2.6, 0, Math.PI * 2); x.fill(); });
+    x.fillStyle = HAIR[1];
+    spots.forEach(([a, b], k) => { if (k % 2 === 0) x.fillRect(a + cx - 14, b + top - 2, 2, 1); });
+    x.fillStyle = HAIR[0];
+    spots.forEach(([a, b], k) => { if (k % 3 === 0) x.fillRect(a + cx - 14, b + top - 2, 1, 1); });
+    x.fillStyle = HAIR[3];
+    spots.forEach(([a, b], k) => { if (k % 2) x.fillRect(a + cx - 12, b + top + 1, 1, 1); });
+  }
   function figure({ view = 'front', walk = 0, sit = false, typing = 0, wave = false, bob = 0 }) {
     const key = `${view}${walk}${sit}${typing}${wave}${bob}`;
     if (figCache.has(key)) return figCache.get(key);
-    const H = sit ? 42 : 60;
+    const H = sit ? 44 : 62;
     const s = spriteCanvas(26, H, (x) => {
       const r = (a, b, w, h, c) => { x.fillStyle = c; x.fillRect(a, b, w, h); };
       const back = view === 'back';
-      const oy = 3 + bob; // headroom for the hair, plus breathing bob
-      // legs: joggers with a side stripe, white sneakers with orange soles
+      const oy = 5 + bob;
+      // baggy stone pants with folds, chunky sneakers
       if (!sit) {
         const lo = walk === 1 ? -2 : walk === 2 ? 1 : 0, ro = walk === 1 ? 1 : walk === 2 ? -2 : 0;
-        [[7, lo, 0], [14, ro, 1]].forEach(([lx, off, k]) => {
-          r(lx, 39, 5, 12 + Math.max(0, off), JOG[1]);
-          r(lx + (k ? 0 : 4), 39, 1, 12 + Math.max(0, off), JOG[2]);
-          r(lx + (k ? 4 : 0), 40, 1, 10 + Math.max(0, off), '#e8e6f0');
-          r(lx, 49 + off, 5, 2, JOG[2]);
-          r(lx - 1, 51 + off, 7, 3, '#f4f4f6');
-          r(lx - 1, 51 + off, 7, 1, '#ffffff');
-          r(lx + (k ? 5 : -1), 52 + off, 1, 2, '#c9ccd8');
-          r(lx - 1, 54 + off, 7, 1, ACC);
+        [[5, lo, 0], [13, ro, 1]].forEach(([lx, off, k]) => {
+          const len = 13 + Math.max(0, off);
+          r(lx, 40, 8, len, PANTS[1]);
+          r(lx + (k ? 6 : 0), 40, 2, len, k ? PANTS[2] : PANTS[0]);
+          r(lx + 3, 43, 1, 4, PANTS[2]); r(lx + 2, 48 + off, 4, 1, PANTS[2]);
+          r(lx, 51 + off, 8, 2, PANTS[2]);
+          r(lx - 1, 53 + off, 9, 3, SNEAK[0]);
+          r(lx + (k ? 5 : 1), 54 + off, 3, 1, SNEAK[2]);
+          r(lx - 1, 56 + off, 9, 1, SNEAK[3]);
         });
       }
       const armY = sit ? 0 : walk === 1 ? 1 : walk === 2 ? -1 : 0;
-      const arm = (ax, ay, dark) => {
-        r(ax, oy + ay + 18, 4, 12, dark ? HOOD[2] : HOOD[1]);
-        r(ax + (dark ? 3 : 0), oy + ay + 18, 1, 12, dark ? HOOD[3] : HOOD[0]);
-        r(ax, oy + ay + 29, 4, 1, HOOD[3]);
-        r(ax, oy + ay + 30, 4, 3, SKIN[1]); r(ax + (dark ? 3 : 0), oy + ay + 30, 1, 3, SKIN[2]);
+      // oversized tee: dropped shoulders, wide short sleeves, long boxy body
+      const sleeve = (ax, ay, dark) => {
+        r(ax, oy + ay + 16, 6, 11, dark ? TEE[2] : TEE[1]);
+        r(ax + (dark ? 5 : 0), oy + ay + 16, 1, 11, dark ? TEE[3] : TEE[0]);
+        r(ax, oy + ay + 26, 6, 1, TEE[3]);
+        r(ax + 1, oy + ay + 27, 4, 6, SKIN[1]); r(ax + (dark ? 4 : 1), oy + ay + 27, 1, 6, dark ? SKIN[2] : SKIN[0]);
+        r(ax + 1, oy + ay + 33, 4, 2, SKIN[2]);
       };
-      // torso: broad-shouldered bomber hoodie
-      r(5, oy + 17, 16, 19, HOOD[1]);
-      r(5, oy + 18, 3, 17, HOOD[0]);
-      r(16, oy + 17, 5, 19, HOOD[2]);
-      r(5, oy + 34, 16, 2, HOOD[3]);
-      x.clearRect(5, oy + 17, 1, 1); x.clearRect(20, oy + 17, 1, 1);
+      r(4, oy + 15, 18, 22, TEE[1]);
+      r(4, oy + 16, 3, 20, TEE[0]);
+      r(17, oy + 15, 5, 22, TEE[2]);
+      r(4, oy + 36, 18, 1, TEE[3]);
+      r(8, oy + 30, 1, 5, TEE[2]); r(15, oy + 29, 1, 6, TEE[2]);
+      x.clearRect(4, oy + 15, 1, 1); x.clearRect(21, oy + 15, 1, 1);
       if (!back) {
-        r(11, oy + 17, 4, 8, TEE); r(11, oy + 24, 4, 1, '#d8d3c6');
-        r(12, oy + 25, 2, 9, ACC); r(12, oy + 25, 1, 9, '#ffb08f');
-        r(10, oy + 19, 1, 5, '#e8e6f0'); r(15, oy + 19, 1, 4, '#e8e6f0');
-        r(10, oy + 24, 1, 1, ACC); r(15, oy + 23, 1, 1, ACC);
-        r(6, oy + 27, 4, 1, HOOD[3]); r(16, oy + 27, 4, 1, HOOD[3]);
+        r(10, oy + 15, 6, 2, TEE[3]); r(11, oy + 15, 4, 1, SKIN[2]);
+        r(9, oy + 20, 7, 5, TEE[2]);
+        x.fillStyle = ACC; x.beginPath(); x.arc(12.5, oy + 22, 2, 0, Math.PI * 2); x.fill();
+        r(9, oy + 25, 7, 1, TEE_PRINT); r(10, oy + 26, 5, 1, TEE_PRINT);
       } else {
-        r(8, oy + 17, 10, 5, HOOD[0]); r(9, oy + 21, 8, 2, HOOD[1]); r(8, oy + 22, 10, 1, HOOD[3]);
-        r(12, oy + 26, 2, 6, HOOD[2]);
+        r(10, oy + 15, 6, 1, TEE[3]);
+        r(11, oy + 18, 4, 1, TEE[0]);
       }
-      // arms (+ watch), wave or typing variants
-      if (sit && typing) { r(3, oy + 20, 3, 9, HOOD[1]); r(20, oy + 20, 3, 9, HOOD[2]); }
+      if (sit && typing) { r(1, oy + 17, 5, 10, TEE[1]); r(20, oy + 17, 5, 10, TEE[2]); }
       else {
-        arm(1, armY, false);
-        r(1, oy + armY + 29, 4, 1, PHONES[1]);
+        sleeve(0, armY, false);
         if (wave) {
-          r(21, oy + 9, 4, 10, HOOD[2]); r(24, oy + 9, 1, 10, HOOD[3]);
-          r(21, oy + 5, 4, 4, SKIN[1]); r(24, oy + 5, 1, 4, SKIN[2]); r(21, oy + 4, 3, 1, SKIN[0]);
-        } else arm(21, -armY, true);
+          r(20, oy + 11, 6, 8, TEE[2]); r(25, oy + 11, 1, 8, TEE[3]);
+          r(21, oy + 5, 4, 6, SKIN[1]); r(24, oy + 5, 1, 6, SKIN[2]); r(21, oy + 3, 4, 2, SKIN[0]);
+        } else sleeve(20, -armY, true);
       }
-      // neck + headphones round the neck
-      r(10, oy + 14, 6, 3, SKIN[2]);
-      r(7, oy + 15, 12, 2, '#1b1b22');
-      if (!back) { r(6, oy + 15, 3, 4, PHONES[1]); r(17, oy + 15, 3, 4, PHONES[2]); r(6, oy + 15, 1, 2, PHONES[0]); }
-      else { r(6, oy + 15, 3, 3, PHONES[2]); r(17, oy + 15, 3, 3, PHONES[2]); }
-      // head
-      x.fillStyle = SKIN[1]; x.beginPath(); x.ellipse(13, oy + 8, 6.5, 7.5, 0, 0, Math.PI * 2); x.fill();
-      r(17, oy + 3, 3, 10, SKIN[2]); r(9, oy + 14, 9, 2, SKIN[2]); r(7.5, oy + 5, 2, 6, SKIN[0]);
-      r(5, oy + 6, 2, 4, SKIN[2]); r(20, oy + 6, 1, 4, SKIN[3]);
-      // high-top fade: tall textured top, faded sides, violet sheen
-      x.fillStyle = HAIR[2];
-      x.beginPath(); x.ellipse(13, oy + 1, 7, 5.5, 0, Math.PI, 0); x.fill();
-      r(6, oy - 3, 14, 5, HAIR[2]);
-      r(7, oy - 4, 12, 1, HAIR[2]);
-      for (let k = 0; k < 6; k++) r(7 + k * 2, oy - 5 + (k % 2), 1, 1, HAIR[2]);
-      r(6, oy + 1, 1, 4, '#3a2f3a'); r(19, oy + 1, 1, 4, '#3a2f3a');
+      // neck + head
+      r(10, oy + 12, 6, 3, SKIN[2]);
+      x.fillStyle = SKIN[1]; x.beginPath(); x.ellipse(13, oy + 7, 6.5, 7.5, 0, 0, Math.PI * 2); x.fill();
+      r(17, oy + 2, 3, 10, SKIN[2]); r(9, oy + 13, 9, 1, SKIN[2]); r(7.5, oy + 4, 2, 6, SKIN[0]);
+      r(5, oy + 6, 2, 3, SKIN[2]); r(20, oy + 6, 1, 3, SKIN[3]);
+      // curly hair
       if (back) {
-        x.fillStyle = HAIR[2]; x.beginPath(); x.ellipse(13, oy + 5, 7, 6, 0, 0, Math.PI * 2); x.fill();
-        r(7, oy + 8, 12, 4, '#3a2f3a'); r(8, oy + 11, 10, 2, SKIN[2]);
-        r(16, oy - 2, 3, 8, HAIR[3]);
-      } else r(7, oy + 2, 12, 1, HAIR[3]);
-      r(9, oy - 3, 5, 1, HAIR[1]); r(10, oy - 2, 2, 1, HAIR[0]); r(15, oy - 2, 2, 1, HAIR[1]);
+        x.fillStyle = HAIR[2]; x.beginPath(); x.ellipse(13, oy + 5, 7.5, 7, 0, 0, Math.PI * 2); x.fill();
+        curls(x, 13, oy - 3, true);
+      } else {
+        x.fillStyle = HAIR[2]; x.beginPath(); x.ellipse(13, oy + 0.5, 7.5, 4.5, 0, Math.PI, 0); x.fill();
+        r(5.5, oy, 15, 3, HAIR[2]);
+        curls(x, 13, oy - 3, false);
+        r(6, oy + 3, 2, 4, HAIR[2]); r(19, oy + 3, 2, 3, HAIR[3]);
+      }
       if (!back) {
-        r(9, oy + 4, 3, 1, HAIR[3]); r(15, oy + 4, 3, 1, HAIR[3]);
-        r(10, oy + 6, 2, 2, '#1b1b22'); r(15, oy + 6, 2, 2, '#1b1b22');
-        r(10, oy + 6, 1, 1, '#ffffff'); r(15, oy + 6, 1, 1, '#ffffff');
-        r(13, oy + 8, 1, 2, SKIN[2]);
-        r(11, oy + 11, 4, 1, SKIN[3]); r(14, oy + 10, 1, 1, SKIN[3]);
+        // blue-light glasses
+        r(8, oy + 6, 4, 1, FRAME); r(14, oy + 6, 4, 1, FRAME);
+        r(8, oy + 9, 4, 1, FRAME); r(14, oy + 9, 4, 1, FRAME);
+        r(8, oy + 6, 1, 4, FRAME); r(11, oy + 6, 1, 4, FRAME); r(14, oy + 6, 1, 4, FRAME); r(17, oy + 6, 1, 4, FRAME);
+        r(12, oy + 7, 2, 1, FRAME);
+        r(6, oy + 7, 2, 1, FRAME); r(18, oy + 7, 2, 1, FRAME);
+        r(9, oy + 7, 2, 2, LENS); r(15, oy + 7, 2, 2, LENS);
+        r(10, oy + 7, 1, 2, '#1b1b22'); r(16, oy + 7, 1, 2, '#1b1b22');
+        r(9, oy + 7, 1, 1, '#ffffff'); r(15, oy + 7, 1, 1, '#ffffff');
+        r(9, oy + 5, 2, 1, HAIR[2]); r(15, oy + 5, 2, 1, HAIR[2]);
+        r(13, oy + 10, 1, 1, SKIN[2]);
+        r(11, oy + 12, 3, 1, SKIN[3]); r(14, oy + 11, 1, 1, SKIN[3]);
+        r(8, oy + 11, 1, 1, '#f3b3a3'); r(18, oy + 11, 1, 1, '#f3b3a3');
+      } else {
+        r(5, oy + 7, 2, 1, FRAME); r(19, oy + 7, 2, 1, FRAME);
       }
     });
     figCache.set(key, s);
@@ -349,27 +367,27 @@
   const pushCache = new Map();
   function pushupSprite(frame) {
     if (pushCache.has(frame)) return pushCache.get(frame);
-    const s = spriteCanvas(46, 24, (x) => {
+    const s = spriteCanvas(48, 26, (x) => {
       const r = (a, b, w, h, c) => { x.fillStyle = c; x.fillRect(a, b, w, h); };
       const seg = (x0, y0, x1, y1, w, c) => { x.strokeStyle = c; x.lineWidth = w; x.lineCap = 'round'; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke(); };
       const down = frame === 1;
-      const sh = down ? 16 : 10, hip = down ? 18 : 14;
-      // sneakers + legs
-      r(1, 19, 5, 3, '#f4f4f6'); r(1, 22, 5, 1, ACC);
-      seg(5, 19, 21, hip, 4.5, JOG[1]); seg(5, 18, 21, hip - 1.5, 1, '#e8e6f0');
-      // torso (hoodie) + orange zip line on the chest side
-      seg(21, hip, 33, sh, 6.5, HOOD[1]); seg(21, hip - 2.2, 33, sh - 2.2, 1.6, HOOD[0]);
-      seg(24, hip + 2.4, 32, sh + 2.4, 1, ACC);
-      // arm: straight or bent at the elbow
-      if (down) { seg(32, sh, 26, 20, 3.5, HOOD[2]); seg(26, 20, 32, 22, 3, HOOD[2]); r(31, 21, 3, 2, SKIN[1]); }
-      else { seg(32, sh + 1, 33, 21, 3.5, HOOD[2]); r(32, 20, 3, 3, SKIN[1]); r(32, 20, 3, 1, PHONES[1]); }
-      // headphones + head + high-top
-      r(33, sh - 1, 3, 3, PHONES[1]);
+      const sh = down ? 17 : 11, hip = down ? 19 : 15;
+      // chunky sneakers + baggy pants
+      r(1, 20, 6, 4, SNEAK[0]); r(1, 23, 6, 1, SNEAK[3]);
+      seg(6, 20, 21, hip, 6, PANTS[1]); seg(7, 18.5, 21, hip - 2.2, 1.2, PANTS[0]); seg(9, 22, 20, hip + 2.4, 1, PANTS[2]);
+      // oversized tee hangs a little below the body line
+      seg(20, hip, 33, sh, 7.5, TEE[1]); seg(20, hip - 2.6, 33, sh - 2.6, 1.8, TEE[0]);
+      seg(22, hip + 3.2, 31, sh + 3.4, 1.4, TEE[2]);
+      // arm: wide short sleeve, then forearm
+      if (down) { seg(32, sh, 28, 19, 5, TEE[2]); seg(27, 20, 32, 23, 3, SKIN[1]); r(31, 22, 3, 2, SKIN[2]); }
+      else { seg(32, sh, 32.5, sh + 4, 5, TEE[2]); seg(32.5, sh + 5, 33, 22, 3, SKIN[1]); r(32, 21, 3, 3, SKIN[2]); }
+      // head, curls, glasses
       x.fillStyle = SKIN[1]; x.beginPath(); x.arc(38.5, sh - 3, 4, 0, Math.PI * 2); x.fill();
       r(40, sh - 3, 2, 3, SKIN[2]);
-      x.fillStyle = HAIR[2]; x.beginPath(); x.ellipse(37.5, sh - 6, 4.8, 3, -0.25, 0, Math.PI * 2); x.fill();
-      r(35, sh - 9, 5, 2, HAIR[2]); r(36, sh - 9, 2, 1, HAIR[1]);
-      r(40, sh - 3, 1, 1, '#1b1b22');
+      x.fillStyle = HAIR[2];
+      [[35, -7], [38, -8], [41, -7], [34, -4], [36, -5]].forEach(([a, b]) => { x.beginPath(); x.arc(a, sh + b, 2.4, 0, Math.PI * 2); x.fill(); });
+      r(36, sh - 10, 2, 1, HAIR[0]); r(40, sh - 9, 1, 1, HAIR[1]);
+      r(39, sh - 4, 3, 1, FRAME); r(41, sh - 4, 1, 2, LENS); r(38, sh - 4, 1, 1, FRAME);
     });
     pushCache.set(frame, s);
     return s;
