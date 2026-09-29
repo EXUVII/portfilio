@@ -6,7 +6,7 @@ A 3D endless runner that runs in the browser: [`runner/index.html`](runner/index
 
 Everything is generated in code: no image, model or audio files.
 
-- **Graphics**: Three.js (loaded from a CDN) with custom shaders. That covers a dusk sky with a low sun, clouds and stars, a procedurally lit city, bloom, chromatic aberration, GPU particles, a ribbon trail and soft shadows.
+- **Graphics**: Three.js (bundled locally in `runner/vendor/`) with custom shaders. That covers a dusk sky with a low sun, clouds and stars, a procedurally lit city, bloom, chromatic aberration, GPU particles, a ribbon trail and soft shadows.
 - **Runner**: a character built from primitives and animated procedurally. It has a run cycle with footsteps, a jump with alternating lead leg, a front flip on double jump, a barrel roll when changing lanes in the air, a baseball slide, a ground slam with a shockwave, squash and stretch, landing crouch, stumble and a ragdoll-style wipeout.
 - **Sound**: synthesized live with the Web Audio API. Every effect is layered from oscillators, filtered noise, envelopes, stereo panning and a generated reverb. The coin chime rises in pitch along a combo, and a synthwave soundtrack plays from a small built-in sequencer. It gains layers as you get further, and its filter closes when you crash.
 - **Game feel**: input buffering, coyote time, hit-stop, slow motion on a crash, camera shake, a speed-scaled field of view, speed lines, a combo multiplier and trick bonuses (Perfect, Limbo, Close Call, Rooftop, Slam, Flip). It also has magnet, shield and double-score power-ups, distance signs, and a "Your best" sign on the highway at your record distance.
@@ -22,11 +22,6 @@ Everything is generated in code: no image, model or audio files.
 
 ### Run it locally
 
-The page loads Three.js as ES modules from jsDelivr, so serve the folder over HTTP rather than opening the file directly:
+Open `runner/index.html` in a browser. It has no network dependencies apart from Google Fonts, which fall back to system fonts when offline. It also works as-is on GitHub Pages.
 
-```sh
-npx serve .            # or: python3 -m http.server
-# then open http://localhost:3000/runner/ (or :8000/runner/)
-```
-
-It also works as-is on GitHub Pages.
+`runner/vendor/three.bundle.min.js` is Three.js r170 plus the post-processing add-ons, bundled into one classic script. To rebuild it, see the command in `runner/vendor/entry.js`.

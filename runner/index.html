@@ -203,21 +203,12 @@ button:focus-visible{outline:3px solid var(--neon);outline-offset:3px}
 <script>
 setTimeout(function(){ if(!window.__ready){ var b=document.getElementById('btn-play'); b.textContent='Engine failed to load'; document.getElementById('loaderr').hidden=false; } }, 20000);
 </script>
-<script type="importmap">
-{ "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-} }
-</script>
-<script type="module">
-import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-
+<script src="vendor/three.bundle.min.js"></script>
+<script>
+(function () {
+'use strict';
+if (!window.THREEKIT) { document.getElementById('btn-play').textContent = 'Engine failed to load'; document.getElementById('loaderr').hidden = false; return; }
+const { THREE, EffectComposer, RenderPass, UnrealBloomPass, ShaderPass, OutputPass, mergeGeometries } = window.THREEKIT;
 window.__ready = true;
 
 /* =====================================================================
@@ -1920,6 +1911,7 @@ playBtn.disabled = false;
 playBtn.innerHTML = 'Run <kbd>Enter</kbd>';
 requestAnimationFrame(frame);
 window.__game = { G, P, startRun, moveLane, pressUp, pressDown, tick };
+})();
 </script>
 </body>
 </html>
