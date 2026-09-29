@@ -784,6 +784,7 @@ const R = {};
   const suit = new THREE.MeshStandardMaterial({ color: '#f1ece6', roughness: .42, metalness: .08 });
   const dark = new THREE.MeshStandardMaterial({ color: '#241c38', roughness: .55, metalness: .35 });
   const accent = new THREE.MeshStandardMaterial({ color: '#ff6a3d', emissive: '#ff5a2a', emissiveIntensity: 2.2, roughness: .4 });
+  const soleMat = new THREE.MeshStandardMaterial({ color: '#3a2c3c', roughness: .85 });
   const visor = new THREE.MeshStandardMaterial({ color: '#07070f', emissive: '#46f0e0', emissiveIntensity: 3.4, roughness: .15, metalness: .6 });
   const M = (geo, mat) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; return m; };
   const cap = (r, l) => new THREE.CapsuleGeometry(r, l, 4, 10);
@@ -817,7 +818,7 @@ const R = {};
     const shin = M(cap(.08, .26), suit); shin.position.y = -.2; kn.add(shin);
     const an = new THREE.Group(); an.position.y = -.44; kn.add(an);
     const foot = M(new THREE.BoxGeometry(.14, .1, .3), dark); foot.position.set(0, 0, -.05); an.add(foot);
-    const sole = M(new THREE.BoxGeometry(.15, .03, .31), accent); sole.position.set(0, -.05, -.05); an.add(sole);
+    const sole = M(new THREE.BoxGeometry(.15, .03, .31), soleMat); sole.position.set(0, -.05, -.05); an.add(sole);
     return { hp, kn, an };
   };
   R.armL = limbArm(-1); R.armR = limbArm(1); R.legL = limbLeg(-1); R.legR = limbLeg(1);
@@ -867,7 +868,7 @@ class Particles {
       uniforms: { uScale: { value: 400 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
       vertexShader: `attribute vec3 aColor; attribute float aSize; attribute float aAlpha; uniform float uScale; varying vec3 vC; varying float vA;
         void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.); gl_Position = projectionMatrix * mv;
-          gl_PointSize = aAlpha <= 0. ? 0. : aSize * uScale / max(.1, -mv.z); vC = aColor; vA = aAlpha; }`,
+          gl_PointSize = aAlpha <= 0. ? 0. : aSize * uScale / max(.1, -mv.z); vC = aColor; vA = aAlpha * smoothstep(3.5, 6.5, -mv.z); }`,
       fragmentShader: `varying vec3 vC; varying float vA;
         void main(){ vec2 c = gl_PointCoord - .5; float d = length(c); if (d > .5) discard; gl_FragColor = vec4(vC, pow(1. - d * 2., 1.6) * vA); }`
     });
@@ -911,19 +912,24 @@ function radial(x, y, z, n, speed, life, size, r, g, b, grav = 0) {
 }
 
 const TRAIL_N = 28;
-const TRAIL_SEG = .15, HIST_N = 90;
+const TRAIL_SEG = .09, HIST_N = 90;
 const trail = { hist: [], alpha: 0 };
 const trailGeo = new THREE.BufferGeometry();
-const trailPos = new Float32Array(TRAIL_N * 2 * 3), trailT = new Float32Array(TRAIL_N * 2);
-for (let i = 0; i < TRAIL_N; i++) { trailT[i * 2] = trailT[i * 2 + 1] = i / (TRAIL_N - 1); }
+const trailPos = new Float32Array(TRAIL_N * 2 * 3), trailT = new Float32Array(TRAIL_N * 2), trailS = new Float32Array(TRAIL_N * 2);
+for (let i = 0; i < TRAIL_N; i++) { trailT[i * 2] = trailT[i * 2 + 1] = i / (TRAIL_N - 1); trailS[i * 2] = -1; trailS[i * 2 + 1] = 1; }
 const trailIdx = []; for (let i = 0; i < TRAIL_N - 1; i++) { const a = i * 2; trailIdx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
 trailGeo.setIndex(trailIdx);
 trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3).setUsage(THREE.DynamicDrawUsage));
 trailGeo.setAttribute('aT', new THREE.BufferAttribute(trailT, 1));
+trailGeo.setAttribute('aS', new THREE.BufferAttribute(trailS, 1));
 const trailMat = new THREE.ShaderMaterial({
   uniforms: { uAlpha: { value: .3 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-  vertexShader: `attribute float aT; varying float vT; void main(){ vT = aT; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
-  fragmentShader: `uniform float uAlpha; varying float vT; void main(){ vec3 c = mix(vec3(.35, 2.4, 2.2), vec3(2.6, .55, .3), vT); gl_FragColor = vec4(c, (1. - vT) * (1. - vT) * uAlpha); }`
+  vertexShader: `attribute float aT; attribute float aS; varying float vT; varying float vS; void main(){ vT = aT; vS = aS; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
+  fragmentShader: `uniform float uAlpha; varying float vT; varying float vS;
+    void main(){ vec3 c = mix(vec3(.3, 1.6, 1.5), vec3(1.7, .45, .25), vT);
+      float edge = 1. - vS * vS; edge *= edge;          // soft falloff across the width, no hard edges
+      float fade = (1. - vT) * (1. - vT) * (1. - vT);   // bright at the runner, gone by the tail
+      gl_FragColor = vec4(c, edge * fade * uAlpha); }`
 });
 const trailMesh = new THREE.Mesh(trailGeo, trailMat); trailMesh.frustumCulled = false; scene.add(trailMesh);
 
@@ -1485,7 +1491,7 @@ function animateRunner(dt) {
     if (cs !== P.lastCs) {
       P.lastCs = cs;
       if (G.state === 'play') sound.step(cs * .15);
-      particles.emit(P.x + cs * .12, P.y + .05, P.z + .1, rand(-.4, .4), rand(.3, .8), rand(.5, 1.5), .35, .35, .3, .25, .4, -1, 3);
+      particles.emit(P.x + cs * .12, P.y + .05, P.z + .1, rand(-.4, .4), rand(.3, .8), rand(.5, 1.5), .18, .22, .3, .25, .4, -1, 3);
     }
   }
   const run = runPose(P.phase, sk);
@@ -1647,13 +1653,13 @@ function updateTrail(dt) {
     const a = h[k], b = h[Math.min(k + 1, h.length - 1)];
     const f = a.t === b.t ? 0 : clamp((a.t - tt) / (a.t - b.t), 0, 1);
     const x = lerp(a.x, b.x, f), y = lerp(a.y, b.y, f), z = P.z + .28 + i * TRAIL_SEG;
-    const w = .2 * (1 - i / TRAIL_N) + .03, j = i * 6;
+    const w = .12 * Math.pow(1 - i / TRAIL_N, 1.5) + .004, j = i * 6;
     trailPos[j] = x - w; trailPos[j + 1] = y; trailPos[j + 2] = z;
     trailPos[j + 3] = x + w; trailPos[j + 4] = y; trailPos[j + 5] = z;
   }
   trailGeo.attributes.position.needsUpdate = true;
   const air = !P.grounded || P.sliding > 0;
-  trail.alpha = damp(trail.alpha, P.dead ? 0 : air ? .7 : .25 + speedK() * .25, 6, dt);
+  trail.alpha = damp(trail.alpha, P.dead ? 0 : !P.grounded ? .75 : P.sliding > 0 ? .4 : speedK() * .12, 8, dt);
   trailMat.uniforms.uAlpha.value = trail.alpha;
 }
 function updateShocks(dt, dD) {
