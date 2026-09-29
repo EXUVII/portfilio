@@ -815,9 +815,10 @@ const R = {};
     const th = M(cap(.095, .26), dark); th.position.y = -.2; hp.add(th);
     const kn = new THREE.Group(); kn.position.y = -.43; hp.add(kn);
     const shin = M(cap(.08, .26), suit); shin.position.y = -.2; kn.add(shin);
-    const foot = M(new THREE.BoxGeometry(.14, .1, .3), dark); foot.position.set(0, -.44, -.05); kn.add(foot);
-    const sole = M(new THREE.BoxGeometry(.15, .03, .31), accent); sole.position.set(0, -.49, -.05); kn.add(sole);
-    return { hp, kn };
+    const an = new THREE.Group(); an.position.y = -.44; kn.add(an);
+    const foot = M(new THREE.BoxGeometry(.14, .1, .3), dark); foot.position.set(0, 0, -.05); an.add(foot);
+    const sole = M(new THREE.BoxGeometry(.15, .03, .31), accent); sole.position.set(0, -.05, -.05); an.add(sole);
+    return { hp, kn, an };
   };
   R.armL = limbArm(-1); R.armR = limbArm(1); R.legL = limbLeg(-1); R.legR = limbLeg(1);
   R.shield = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 20), fresnelMat('#53f0de', 1.6));
@@ -838,15 +839,15 @@ function fresnelMat(color, strength = 1.8) {
 }
 
 /* ----- poses (radians). Forward is -z; positive hip angle swings a leg forward ----- */
-const POSE_KEYS = ['torso', 'twist', 'head', 'hipL', 'hipR', 'kneeL', 'kneeR', 'shL', 'shR', 'elL', 'elR', 'outL', 'outR', 'hipsY'];
+const POSE_KEYS = ['torso', 'twist', 'roll', 'head', 'hipL', 'hipR', 'kneeL', 'kneeR', 'shL', 'shR', 'elL', 'elR', 'outL', 'outR', 'hipsY'];
 const SLIDE_POSE = { torso: .95, twist: .15, head: -.6, hipL: 1.5, hipR: 1.0, kneeL: -.1, kneeR: -1.9, shL: .7, shR: -.9, elL: .5, elR: .2, outL: .5, outR: .75, hipsY: .42 };
 const TUCK_POSE = { torso: -.75, twist: 0, head: -.35, hipL: 2.1, hipR: 2.1, kneeL: -2.4, kneeR: -2.4, shL: 1.1, shR: 1.1, elL: 1.9, elR: 1.9, outL: .2, outR: .2, hipsY: .95 };
 const DIVE_POSE = { torso: -.35, twist: 0, head: .35, hipL: .05, hipR: -.05, kneeL: -.15, kneeR: -.15, shL: 2.9, shR: 2.9, elL: .15, elR: .15, outL: .3, outR: .3, hipsY: .95 };
 const JUMP_POSE = { torso: -.18, twist: -.1, head: .25, hipL: 1.5, hipR: -.35, kneeL: -2.0, kneeR: -.6, shL: -.8, shR: 2.2, elL: .6, elR: .4, outL: .3, outR: .2, hipsY: .95 };
 const FALL_POSE = { torso: -.08, twist: 0, head: .2, hipL: .75, hipR: .35, kneeL: -.95, kneeR: -.45, shL: .5, shR: .4, elL: .5, elR: .5, outL: 1.1, outR: 1.1, hipsY: .95 };
 const LIMP_POSE = { torso: .2, twist: 0, head: .1, hipL: .25, hipR: .45, kneeL: -.3, kneeR: -.5, shL: .3, shR: .2, elL: .3, elR: .4, outL: 1.3, outR: 1.1, hipsY: .95 };
-const pose = { torso: -.25, twist: 0, head: .15, hipL: 0, hipR: 0, kneeL: -.3, kneeR: -.3, shL: 0, shR: 0, elL: 1.2, elR: 1.2, outL: .12, outR: .12, hipsY: .95 };
-const tgt = { ...pose };
+const pose = { torso: -.25, twist: 0, roll: 0, head: .15, hipL: 0, hipR: 0, kneeL: -.3, kneeR: -.3, shL: 0, shR: 0, elL: 1.2, elR: 1.2, outL: .12, outR: .12, hipsY: .95 };
+const fin = { ...pose };
 function mirrorPose(p) { const m = { ...p }; for (const [a, b] of [['hipL', 'hipR'], ['kneeL', 'kneeR'], ['shL', 'shR'], ['elL', 'elR'], ['outL', 'outR']]) { m[a] = p[b]; m[b] = p[a]; } m.twist = -p.twist; return m; }
 const JUMP_POSE_M = mirrorPose(JUMP_POSE);
 
@@ -1447,8 +1448,47 @@ function updatePlayer(dt) {
   animateRunner(dt);
 }
 
+/* The run cycle is evaluated exactly every frame (never low-pass filtered, so it stays crisp at any
+   cadence) and blended against the smoothed state poses with a single weight. Stride length and cadence
+   both grow with speed: a loose jog at the start, a leaning, high-knee sprint near top speed. */
+const RUN = {};
+function legCycle(phi, A, kneeAmp, k) {
+  const hip = .12 + .08 * k + A * Math.sin(phi);
+  const c = Math.cos(phi + .35);
+  const swing = Math.pow(Math.max(0, c), 1.6);         // heel tucks up as the thigh comes through
+  const give = Math.pow(Math.max(0, -c), 2) * .22;     // slight knee give while the foot carries weight
+  return [hip, -(.22 + kneeAmp * swing + give)];
+}
+function runPose(ph, k) {
+  const A = lerp(.78, 1.12, k), kneeAmp = lerp(1.25, 1.95, k), armA = lerp(.8, 1.25, k);
+  [RUN.hipL, RUN.kneeL] = legCycle(ph, A, kneeAmp, k);
+  [RUN.hipR, RUN.kneeR] = legCycle(ph + Math.PI, A, kneeAmp, k);
+  const s = Math.sin(ph), elB = lerp(1.2, 1.5, k);
+  RUN.shL = -armA * s; RUN.shR = armA * s;
+  RUN.elL = elB + .3 * (.5 - .5 * s); RUN.elR = elB + .3 * (.5 + .5 * s);
+  RUN.outL = RUN.outR = .12 + .06 * k;
+  RUN.torso = -lerp(.26, .5, k);
+  RUN.twist = lerp(.14, .2, k) * s;
+  RUN.roll = .035 * s;
+  RUN.head = -RUN.torso * .75;
+  RUN.hipsY = .935 - lerp(.065, .04, k) * .5 * (1 + Math.cos(2 * (ph - Math.PI / 2 - .8)));
+  return RUN;
+}
+let runW = 0;
 function animateRunner(dt) {
   let src, rate = 18;
+  const running = !P.dead && P.grounded && !(P.sliding > 0);
+  const sk = clamp((G.speed - 12) / (MAX_SPEED - 12), 0, 1);
+  if (running) {
+    P.phase += dt * lerp(10, 19.5, sk);
+    const cs = Math.cos(P.phase) >= 0 ? 1 : -1;
+    if (cs !== P.lastCs) {
+      P.lastCs = cs;
+      if (G.state === 'play') sound.step(cs * .15);
+      particles.emit(P.x + cs * .12, P.y + .05, P.z + .1, rand(-.4, .4), rand(.3, .8), rand(.5, 1.5), .35, .35, .3, .25, .4, -1, 3);
+    }
+  }
+  const run = runPose(P.phase, sk);
   if (P.dead) {
     if (P.y > .05) {
       const t = G.time;
@@ -1461,37 +1501,28 @@ function animateRunner(dt) {
     else if (P.slam) { src = DIVE_POSE; rate = 20; }
     else if (P.vy > 1.5) { src = P.jumpSide > 0 ? JUMP_POSE : JUMP_POSE_M; rate = 16; }
     else { src = FALL_POSE; rate = 9; }
-  } else {
-    P.phase += dt * Math.min(15, 5 + G.speed * .34);
-    const s = Math.sin(P.phase), c = Math.cos(P.phase);
-    tgt.hipL = .15 + .95 * s; tgt.hipR = .15 - .95 * s;
-    tgt.kneeL = -(.3 + 1.4 * Math.max(0, c)); tgt.kneeR = -(.3 + 1.4 * Math.max(0, -c));
-    tgt.shL = -.95 * s; tgt.shR = .95 * s;
-    tgt.elL = 1.25 + .3 * Math.max(0, s); tgt.elR = 1.25 + .3 * Math.max(0, -s);
-    tgt.outL = tgt.outR = .12; tgt.torso = -.3; tgt.twist = .16 * s; tgt.head = .22; tgt.hipsY = .92 + .07 * Math.abs(c);
-    const cs = c >= 0 ? 1 : -1;
-    if (cs !== P.lastCs) {
-      P.lastCs = cs;
-      if (G.state === 'play') sound.step(cs * .15);
-      particles.emit(P.x + cs * .12, P.y + .05, P.z + .1, rand(-.4, .4), rand(.3, .8), rand(.5, 1.5), .35, .35, .3, .25, .4, -1, 3);
-    }
-    rate = 30;
-  }
-  if (src) for (const k of POSE_KEYS) tgt[k] = src[k];
+  } else src = run;
+  for (const key of POSE_KEYS) pose[key] = damp(pose[key], src[key] ?? 0, rate, dt);
+  runW = damp(runW, running ? 1 : 0, running ? 12 : 30, dt);
+  for (const key of POSE_KEYS) fin[key] = lerp(pose[key], run[key], runW);
   if (P.landT > 0 && !P.dead) {
-    const L = P.landT;
-    tgt.hipsY -= .24 * L; tgt.kneeL -= .9 * L; tgt.kneeR -= .9 * L; tgt.hipL += .45 * L; tgt.hipR += .45 * L; tgt.torso -= .35 * L; tgt.outL += .4 * L; tgt.outR += .4 * L;
+    const L = P.landT * P.landT * (3 - 2 * P.landT);
+    fin.hipsY -= .24 * L; fin.kneeL -= .9 * L; fin.kneeR -= .9 * L; fin.hipL += .45 * L; fin.hipR += .45 * L; fin.torso -= .35 * L; fin.outL += .4 * L; fin.outR += .4 * L;
     P.landT = Math.max(0, P.landT - dt * 5);
   }
   if (P.stumbleT > 0) {
-    const s = P.stumbleT; tgt.twist += Math.sin(G.time * 40) * .35 * s; tgt.torso += .3 * s; tgt.outL += .8 * s; tgt.outR += .8 * s;
+    const st = P.stumbleT; fin.twist += Math.sin(G.time * 40) * .35 * st; fin.torso += .3 * st; fin.outL += .8 * st; fin.outR += .8 * st;
     P.stumbleT -= dt;
   }
-  for (const k of POSE_KEYS) pose[k] = damp(pose[k], tgt[k], rate, dt);
-  R.torso.rotation.x = pose.torso; R.torso.rotation.y = pose.twist; R.head.rotation.x = pose.head; R.hips.position.y = pose.hipsY;
-  R.legL.hp.rotation.x = pose.hipL; R.legR.hp.rotation.x = pose.hipR; R.legL.kn.rotation.x = pose.kneeL; R.legR.kn.rotation.x = pose.kneeR;
-  R.armL.sh.rotation.x = pose.shL; R.armR.sh.rotation.x = pose.shR; R.armL.el.rotation.x = pose.elL; R.armR.el.rotation.x = pose.elR;
-  R.armL.sh.rotation.z = -pose.outL; R.armR.sh.rotation.z = pose.outR;
+  R.torso.rotation.set(fin.torso, fin.twist, fin.roll); R.hips.rotation.y = -fin.twist * .5;
+  R.head.rotation.x = fin.head; R.head.rotation.y = -fin.twist * .7; R.hips.position.y = fin.hipsY;
+  R.legL.hp.rotation.x = fin.hipL; R.legR.hp.rotation.x = fin.hipR; R.legL.kn.rotation.x = fin.kneeL; R.legR.kn.rotation.x = fin.kneeR;
+  // Feet flatten for a heel-first landing when the leg reaches forward, and follow the shin
+  // (toe pointing down) when the leg is behind, which reads as pushing off.
+  const ak = lerp(.55, .85, runW), ankle = sum => -sum * (sum > 0 ? ak : ak * .2);
+  R.legL.an.rotation.x = ankle(fin.hipL + fin.kneeL); R.legR.an.rotation.x = ankle(fin.hipR + fin.kneeR);
+  R.armL.sh.rotation.x = fin.shL; R.armR.sh.rotation.x = fin.shR; R.armL.el.rotation.x = fin.elL; R.armR.el.rotation.x = fin.elR;
+  R.armL.sh.rotation.z = -fin.outL; R.armR.sh.rotation.z = fin.outR;
 
   if (!P.dead) {
     if (P.flipT >= 0) {
@@ -1910,7 +1941,7 @@ const playBtn = $('btn-play');
 playBtn.disabled = false;
 playBtn.innerHTML = 'Run <kbd>Enter</kbd>';
 requestAnimationFrame(frame);
-window.__game = { G, P, startRun, moveLane, pressUp, pressDown, tick };
+window.__game = { G, P, R, startRun, moveLane, pressUp, pressDown, tick, camera, composer };
 })();
 </script>
 </body>
