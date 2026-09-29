@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Press Start Portfolio</title>
+<meta name="description" content="Portfolio of Your Name — designer and developer. Placeholder content.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Silkscreen:wght@400;700&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- ============ HUD ============ -->
+<header class="hud" id="hud">
+  <div class="hud-inner">
+    <a class="hud-id" href="#top" aria-label="Back to top">
+      <span class="hud-mark" aria-hidden="true"></span>
+      <span class="hud-name">Your Name</span>
+    </a>
+
+    <nav class="hud-nav" aria-label="Sections">
+      <a href="#about" data-nav="about"><span class="px">1-1</span> Player</a>
+      <a href="#quests" data-nav="quests"><span class="px">1-2</span> Quests</a>
+      <a href="#inventory" data-nav="inventory"><span class="px">1-3</span> Inventory</a>
+      <a href="#save" data-nav="save"><span class="px">1-4</span> Save point</a>
+    </nav>
+
+    <div class="hud-tools">
+      <div class="hud-coins" title="Coins collected">
+        <span class="coin-icon" aria-hidden="true"></span>
+        <span class="px">&times;</span>
+        <span class="px" id="coin-count">00</span>
+      </div>
+      <button class="hud-btn" id="sound-toggle" aria-pressed="false" aria-label="Turn sound on">
+        <span class="px" data-label>SFX OFF</span>
+      </button>
+      <button class="hud-btn" id="theme-toggle" aria-label="Switch to night mode">
+        <span class="theme-glyph" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+  <div class="xp" aria-hidden="true">
+    <span class="xp-label px">XP</span>
+    <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
+    <span class="xp-num px" id="xp-num">000</span>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="top">
+    <div class="wrap">
+      <div class="hero-top">
+        <p class="eyebrow px"><span class="dot" aria-hidden="true"></span> Available for new quests &middot; 2026</p>
+        <p class="hero-meta px">City, Country <span aria-hidden="true">/</span> <span id="clock">00:00</span></p>
+      </div>
+
+      <h1 class="hero-title" data-split>Your Name</h1>
+
+      <div class="hero-sub">
+        <p class="lead">Role title. I design and build <em>playful, precise</em> digital products, from the first sketch to the last pixel.</p>
+        <dl class="hero-facts">
+          <div><dt class="px">Currently</dt><dd>Job Title @ Company Name</dd></div>
+          <div><dt class="px">Focus</dt><dd>Product &middot; Interaction &middot; Visual</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Playable stage -->
+    <div class="wrap">
+      <div class="stage-frame">
+        <div class="stage-bar">
+          <span class="px">Stage 1-1</span>
+          <span class="px stage-hint" id="stage-hint">Demo &middot; Press &larr; &rarr; to play</span>
+          <span class="px stage-keys" aria-hidden="true"><kbd>&larr;</kbd><kbd>&rarr;</kbd> move <kbd>Space</kbd> jump</span>
+        </div>
+        <div class="stage" id="stage" tabindex="0" aria-label="Playable pixel stage. Use arrow keys to move and space to jump. Hit a block to open that section.">
+          <canvas id="stage-canvas" aria-hidden="true"></canvas>
+          <div class="stage-labels" id="stage-labels"></div>
+        </div>
+        <div class="pad" aria-label="Touch controls">
+          <button class="pad-btn" data-key="left" aria-label="Move left">&#9664;</button>
+          <button class="pad-btn" data-key="right" aria-label="Move right">&#9654;</button>
+          <button class="pad-btn pad-btn--a" data-key="jump" aria-label="Jump">A</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span>Now accepting quests</span><i></i><span>Freelance &amp; full-time</span><i></i><span>Product design</span><i></i><span>Creative development</span><i></i><span>Based in City, Country</span><i></i>
+        <span>Now accepting quests</span><i></i><span>Freelance &amp; full-time</span><i></i><span>Product design</span><i></i><span>Creative development</span><i></i><span>Based in City, Country</span><i></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="section" id="about">
+    <div class="wrap">
+      <header class="sec-head">
+        <p class="eyebrow px">World 1-1 &middot; Player</p>
+        <h2 class="sec-title">The character behind the controller.</h2>
+      </header>
+
+      <div class="about">
+        <article class="card-char" id="char-card">
+          <div class="char-top">
+            <span class="px">P1</span>
+            <span class="px">Class: Designer / Dev</span>
+          </div>
+          <div class="char-portrait">
+            <canvas id="avatar" width="24" height="24" aria-label="Pixel avatar"></canvas>
+          </div>
+          <div class="char-plate">
+            <p class="char-name">Your Name</p>
+            <p class="px char-lv">LV 07 &middot; City, Country</p>
+          </div>
+          <ul class="stats" id="stats">
+            <li><span class="px">Design</span><span class="bar" style="--v:9"></span><span class="px num">09</span></li>
+            <li><span class="px">Frontend</span><span class="bar" style="--v:8"></span><span class="px num">08</span></li>
+            <li><span class="px">Motion</span><span class="bar" style="--v:7"></span><span class="px num">07</span></li>
+            <li><span class="px">Pixel art</span><span class="bar" style="--v:8"></span><span class="px num">08</span></li>
+            <li><span class="px">Strategy</span><span class="bar" style="--v:6"></span><span class="px num">06</span></li>
+          </ul>
+          <button class="hidden-coin" aria-label="Hidden coin"><span class="coin-icon"></span></button>
+        </article>
+
+        <div class="about-copy">
+          <p class="big">Short intro statement goes here. One or two lines about who you are and the kind of work you love to make.</p>
+          <p>A longer paragraph for your story. Where you started, what you care about, and how you like to work with teams. Keep it personal and specific. This is placeholder copy to show how a real paragraph sits in the layout.</p>
+          <p>A second paragraph for anything else: side projects, teaching, awards, or what you do when you are away from the screen.</p>
+
+          <h3 class="mini-head px">Loadout</h3>
+          <ul class="loadout">
+            <li data-tip="Tool 01 · Daily"><span class="slot-key px">01</span>Figma</li>
+            <li data-tip="Tool 02 · Daily"><span class="slot-key px">02</span>React</li>
+            <li data-tip="Tool 03 · Weekly"><span class="slot-key px">03</span>TypeScript</li>
+            <li data-tip="Tool 04 · Weekly"><span class="slot-key px">04</span>Three.js</li>
+            <li data-tip="Tool 05 · Weekly"><span class="slot-key px">05</span>Aseprite</li>
+            <li data-tip="Tool 06 · Monthly"><span class="slot-key px">06</span>Blender</li>
+            <li data-tip="Tool 07 · Monthly"><span class="slot-key px">07</span>After Effects</li>
+            <li data-tip="Tool 08 · Always"><span class="slot-key px">08</span>Notebook</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EXPERIENCE ============ -->
+  <section class="section section--alt" id="quests">
+    <div class="wrap">
+      <header class="sec-head sec-head--row">
+        <div>
+          <p class="eyebrow px">World 1-2 &middot; Quest log</p>
+          <h2 class="sec-title">Where I&rsquo;ve leveled up.</h2>
+        </div>
+        <p class="sec-note">Newest first. Open a quest to see what was shipped and what dropped.</p>
+      </header>
+
+      <ol class="quests" id="quest-list">
+        <li class="quest is-open">
+          <button class="quest-head" aria-expanded="true" aria-controls="q1">
+            <span class="quest-lv px">LV 07</span>
+            <span class="quest-main">
+              <span class="quest-role">Job Title</span>
+              <span class="quest-org">Company Name &middot; City</span>
+            </span>
+            <span class="quest-date px">2024 &mdash; Now</span>
+            <span class="chip chip--live px">In progress</span>
+            <span class="quest-toggle" aria-hidden="true"></span>
+          </button>
+          <div class="quest-body" id="q1">
+            <div class="quest-inner">
+              <p>Two or three sentences on the role: the team, the product, and what you were responsible for. Placeholder text to show the rhythm of a real description.</p>
+              <ul class="loot">
+                <li><span class="px">+XP</span> Key achievement with a number, such as a metric you moved.</li>
+                <li><span class="px">+XP</span> A second achievement: something you led, launched, or built.</li>
+                <li><span class="px">+XP</span> A third: a process, system, or team you improved.</li>
+              </ul>
+              <div class="tags"><span>Skill</span><span>Skill</span><span>Skill</span></div>
+            </div>
+          </div>
+        </li>
+
+        <li class="quest">
+          <button class="quest-head" aria-expanded="false" aria-controls="q2">
+            <span class="quest-lv px">LV 05</span>
+            <span class="quest-main">
+              <span class="quest-role">Job Title</span>
+              <span class="quest-org">Company Name &middot; City</span>
+            </span>
+            <span class="quest-date px">2021 &mdash; 2024</span>
+            <span class="chip px">Completed</span>
+            <span class="quest-toggle" aria-hidden="true"></span>
+          </button>
+          <div class="quest-body" id="q2">
+            <div class="quest-inner">
+              <p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p>
+              <ul class="loot">
+                <li><span class="px">+XP</span> Key achievement with a number.</li>
+                <li><span class="px">+XP</span> Something you led or launched.</li>
+              </ul>
+              <div class="tags"><span>Skill</span><span>Skill</span></div>
+            </div>
+          </div>
+        </li>
+
+        <li class="quest">
+          <button class="quest-head" aria-expanded="false" aria-controls="q3">
+            <span class="quest-lv px">LV 03</span>
+            <span class="quest-main">
+              <span class="quest-role">Job Title</span>
+              <span class="quest-org">Company Name &middot; City</span>
+            </span>
+            <span class="quest-date px">2019 &mdash; 2021</span>
+            <span class="chip px">Completed</span>
+            <span class="quest-toggle" aria-hidden="true"></span>
+          </button>
+          <div class="quest-body" id="q3">
+            <div class="quest-inner">
+              <p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p>
+              <ul class="loot">
+                <li><span class="px">+XP</span> Key achievement with a number.</li>
+                <li><span class="px">+XP</span> Something you led or launched.</li>
+              </ul>
+              <div class="tags"><span>Skill</span><span>Skill</span></div>
+            </div>
+          </div>
+        </li>
+
+        <li class="quest">
+          <button class="quest-head" aria-expanded="false" aria-controls="q4">
+            <span class="quest-lv px">LV 01</span>
+            <span class="quest-main">
+              <span class="quest-role">Degree or first role</span>
+              <span class="quest-org">School or Company &middot; City</span>
+            </span>
+            <span class="quest-date px">2015 &mdash; 2019</span>
+            <span class="chip px">Completed</span>
+            <span class="quest-toggle" aria-hidden="true"></span>
+          </button>
+          <div class="quest-body" id="q4">
+            <div class="quest-inner">
+              <p>Where it started. A sentence or two on your studies or first job.</p>
+              <div class="tags"><span>Skill</span><span>Skill</span></div>
+            </div>
+          </div>
+        </li>
+      </ol>
+      <button class="hidden-coin hidden-coin--quests" aria-label="Hidden coin"><span class="coin-icon"></span></button>
+    </div>
+  </section>
+
+  <!-- ============ WORK ============ -->
+  <section class="section" id="inventory">
+    <div class="wrap">
+      <header class="sec-head sec-head--row">
+        <div>
+          <p class="eyebrow px">World 1-3 &middot; Inventory</p>
+          <h2 class="sec-title">Selected work, sorted by rarity.</h2>
+        </div>
+        <div class="filters" role="group" aria-label="Filter projects">
+          <button class="filter is-on px" data-filter="all" aria-pressed="true">All</button>
+          <button class="filter px" data-filter="product" aria-pressed="false">Product</button>
+          <button class="filter px" data-filter="web" aria-pressed="false">Web</button>
+          <button class="filter px" data-filter="game" aria-pressed="false">Game</button>
+          <button class="filter px" data-filter="brand" aria-pressed="false">Brand</button>
+        </div>
+      </header>
+
+      <ul class="inv" id="inv"></ul>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="section section--save" id="save">
+    <div class="wrap save">
+      <header class="sec-head">
+        <p class="eyebrow px">World 1-4 &middot; Save point</p>
+        <h2 class="sec-title sec-title--xl">Let&rsquo;s build the next level together.</h2>
+      </header>
+
+      <div class="dialog-box" id="dialog-box">
+        <div class="npc" aria-hidden="true"><canvas id="npc" width="16" height="16"></canvas></div>
+        <div class="dialog-main">
+          <p class="dialog-name px">Your Name</p>
+          <p class="dialog-text" id="dialog-text">Hey, traveler! Looking for a designer who can also ship code? Pick an option below and let&rsquo;s talk.</p>
+
+          <ul class="choices" id="choices">
+            <li><button class="choice" data-act="copy"><span class="px">Copy email</span><span class="choice-val" id="email-val">hello@yourname.com</span></button></li>
+            <li><button class="choice" data-act="form"><span class="px">Send a message</span><span class="choice-val">Opens a quick form</span></button></li>
+            <li><a class="choice" href="#" data-act="link"><span class="px">LinkedIn</span><span class="choice-val">linkedin.com/in/yourname</span></a></li>
+            <li><a class="choice" href="#" data-act="link"><span class="px">GitHub</span><span class="choice-val">github.com/yourname</span></a></li>
+          </ul>
+
+          <form class="msg-form" id="msg-form" hidden>
+            <div class="field"><label class="px" for="f-name">Name</label><input id="f-name" name="name" autocomplete="name" required></div>
+            <div class="field"><label class="px" for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
+            <div class="field field--full"><label class="px" for="f-msg">Message</label><textarea id="f-msg" name="message" rows="4" required></textarea></div>
+            <div class="form-row">
+              <button type="button" class="px-btn px-btn--ghost" id="form-back">Back</button>
+              <button type="submit" class="px-btn">Save &amp; send</button>
+            </div>
+            <p class="form-note" id="form-note" role="status"></p>
+          </form>
+        </div>
+        <span class="dialog-caret" aria-hidden="true"></span>
+      </div>
+      <button class="hidden-coin hidden-coin--save" aria-label="Hidden coin"><span class="coin-icon"></span></button>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <p class="footer-big px">Thanks for playing</p>
+    <div class="footer-row">
+      <p>&copy; <span id="year">2026</span> Your Name. Built with pixels and care.</p>
+      <p class="px footer-secret">Hint: &uarr; &uarr; &darr; &darr; &larr; &rarr; &larr; &rarr; B A</p>
+      <a class="px-btn" href="#top">Continue? &#9650;</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Project inspect modal -->
+<dialog class="inspect" id="inspect" aria-labelledby="inspect-title">
+  <div class="inspect-inner">
+    <div class="inspect-bar">
+      <span class="px">Item inspect</span>
+      <button class="inspect-close px" id="inspect-close" aria-label="Close">&times; Esc</button>
+    </div>
+    <div class="inspect-body">
+      <canvas class="inspect-cover" id="inspect-cover" width="40" height="28" aria-hidden="true"></canvas>
+      <div class="inspect-info">
+        <p class="px inspect-rarity" id="inspect-rarity">Legendary</p>
+        <h3 class="inspect-title" id="inspect-title">Project</h3>
+        <p class="inspect-desc" id="inspect-desc"></p>
+        <dl class="inspect-stats" id="inspect-stats"></dl>
+        <div class="form-row">
+          <a class="px-btn" href="#" id="inspect-link">View case study</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="crt-overlay" aria-hidden="true"></div>
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>

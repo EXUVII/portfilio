@@ -3,354 +3,239 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Press Start Portfolio</title>
-<meta name="description" content="Portfolio of Your Name — designer and developer. Placeholder content.">
+<title>Adil Asselman</title>
+<meta name="description" content="Adil Asselman, software developer in Tanger, Morocco: systems in C and C++, full-stack TypeScript, and mobile games. One day in a pixel-art studio, from morning training to lights out.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Silkscreen:wght@400;700&display=swap">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Martian+Mono:wght@300..500&display=swap">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#intro">Skip to content</a>
 
-<!-- ============ HUD ============ -->
-<header class="hud" id="hud">
-  <div class="hud-inner">
-    <a class="hud-id" href="#top" aria-label="Back to top">
-      <span class="hud-mark" aria-hidden="true"></span>
-      <span class="hud-name">Your Name</span>
-    </a>
+<div class="layout">
 
-    <nav class="hud-nav" aria-label="Sections">
-      <a href="#about" data-nav="about"><span class="px">1-1</span> Player</a>
-      <a href="#quests" data-nav="quests"><span class="px">1-2</span> Quests</a>
-      <a href="#inventory" data-nav="inventory"><span class="px">1-3</span> Inventory</a>
-      <a href="#save" data-nav="save"><span class="px">1-4</span> Save point</a>
-    </nav>
+  <!-- ============ THE ROOM ============ -->
+  <div class="scene-col">
+    <div class="scene" id="scene">
+      <canvas id="view" role="img" aria-label="A detailed isometric pixel-art studio with a desk, a bookshelf of knowledge, framed jobs on the wall, a training mat and a window. The time of day follows your scroll position."></canvas>
 
-    <div class="hud-tools">
-      <div class="hud-coins" title="Coins collected">
-        <span class="coin-icon" aria-hidden="true"></span>
-        <span class="px">&times;</span>
-        <span class="px" id="coin-count">00</span>
+      <div class="scene-actions" aria-label="Room actions">
+        <button class="chip" id="act-lamp" aria-pressed="false">Lamp</button>
+        <button class="chip" id="act-rain" aria-pressed="false">Rain</button>
+        <button class="chip" id="act-cat">Pet cat</button>
+        <button class="chip" id="act-plant">Water plant</button>
       </div>
-      <button class="hud-btn" id="sound-toggle" aria-pressed="false" aria-label="Turn sound on">
-        <span class="px" data-label>SFX OFF</span>
-      </button>
-      <button class="hud-btn" id="theme-toggle" aria-label="Switch to night mode">
-        <span class="theme-glyph" aria-hidden="true"></span>
-      </button>
+
+      <div class="bubble" id="bubble" hidden></div>
+      <div class="tip" id="tip" hidden><span class="tip-name" id="tip-name"></span><span class="tip-hint" id="tip-hint"></span></div>
+
+      <div class="hud">
+        <div class="clock">
+          <span class="clock-time" id="clock">07:30</span>
+          <span class="clock-label" id="clock-label">Morning · Clear</span>
+        </div>
+        <div class="daybar" aria-hidden="true">
+          <div class="daybar-track"><span class="daybar-fill" id="dayfill"></span><span class="daybar-dot" id="daydot"></span></div>
+          <div class="daybar-ticks"><span>06</span><span>12</span><span>18</span><span>24</span></div>
+        </div>
+      </div>
+      <p class="scene-hint">Hover the room. Click anything.</p>
     </div>
   </div>
-  <div class="xp" aria-hidden="true">
-    <span class="xp-label px">XP</span>
-    <div class="xp-track"><div class="xp-fill" id="xp-fill"></div></div>
-    <span class="xp-num px" id="xp-num">000</span>
-  </div>
-</header>
 
-<main id="main">
+  <!-- ============ THE STORY ============ -->
+  <div class="story">
+    <header class="bar">
+      <a class="brand" href="#intro" aria-label="Adil Asselman, back to top"><span class="brand-mark" aria-hidden="true"></span><span class="brand-text">Adil<span class="brand-last"> Asselman</span></span></a>
+      <nav class="sched" aria-label="Sections">
+        <a href="#intro" data-ch="0"><time>07</time>Intro</a>
+        <a href="#training" data-ch="1"><time>08</time>Training</a>
+        <a href="#about" data-ch="2"><time>10</time>About</a>
+        <a href="#work" data-ch="3"><time>13</time>Work</a>
+        <a href="#knowledge" data-ch="4"><time>15</time>Library</a>
+        <a href="#log" data-ch="5"><time>18</time>Log</a>
+        <a href="#contact" data-ch="6"><time>22</time>Contact</a>
+      </nav>
+      <button class="theme-btn" id="theme" aria-label="Switch to dark theme"><span aria-hidden="true"></span></button>
+    </header>
 
-  <!-- ============ HERO ============ -->
-  <section class="hero" id="top">
-    <div class="wrap">
-      <div class="hero-top">
-        <p class="eyebrow px"><span class="dot" aria-hidden="true"></span> Available for new quests &middot; 2026</p>
-        <p class="hero-meta px">City, Country <span aria-hidden="true">/</span> <span id="clock">00:00</span></p>
-      </div>
-
-      <h1 class="hero-title" data-split>Your Name</h1>
-
-      <div class="hero-sub">
-        <p class="lead">Role title. I design and build <em>playful, precise</em> digital products, from the first sketch to the last pixel.</p>
-        <dl class="hero-facts">
-          <div><dt class="px">Currently</dt><dd>Job Title @ Company Name</dd></div>
-          <div><dt class="px">Focus</dt><dd>Product &middot; Interaction &middot; Visual</dd></div>
+    <main>
+      <!-- 07:30 -->
+      <section class="ch ch--intro" id="intro" data-ch="0">
+        <p class="stamp"><time>07:30</time><span>Morning, in the studio</span></p>
+        <h1 class="name">Adil<br>Asselman</h1>
+        <p class="lede">Software developer. I write <em>systems-level</em> C and C++, ship full-stack TypeScript products, and build mobile games. This site is one day in my studio.</p>
+        <dl class="facts">
+          <div><dt>Based in</dt><dd>Tanger, Morocco</dd></div>
+          <div><dt>Currently</dt><dd>Freelancing on Upwork &amp; building mobile games</dd></div>
+          <div><dt>Open to</dt><dd>Full-time &amp; freelance</dd></div>
         </dl>
-      </div>
-    </div>
+        <p class="cue"><span aria-hidden="true">&darr;</span> Scroll to pass the time</p>
+      </section>
 
-    <!-- Playable stage -->
-    <div class="wrap">
-      <div class="stage-frame">
-        <div class="stage-bar">
-          <span class="px">Stage 1-1</span>
-          <span class="px stage-hint" id="stage-hint">Demo &middot; Press &larr; &rarr; to play</span>
-          <span class="px stage-keys" aria-hidden="true"><kbd>&larr;</kbd><kbd>&rarr;</kbd> move <kbd>Space</kbd> jump</span>
+      <!-- 08:30 -->
+      <section class="ch" id="training" data-ch="1">
+        <p class="stamp"><time>08:30</time><span>Morning training</span></p>
+        <h2 class="h2">Discipline before <em>debugging</em>.</h2>
+        <div class="prose">
+          <p>I train every single day. Push-ups first, then code. It&rsquo;s the same idea that got me through 1337: small reps, no skipped days, and the foundations get strong.</p>
         </div>
-        <div class="stage" id="stage" tabindex="0" aria-label="Playable pixel stage. Use arrow keys to move and space to jump. Hit a block to open that section.">
-          <canvas id="stage-canvas" aria-hidden="true"></canvas>
-          <div class="stage-labels" id="stage-labels"></div>
+        <dl class="train-stats">
+          <div><dt>Days a week</dt><dd>7/7</dd></div>
+          <div><dt>Rest days</dt><dd>0</dd></div>
+          <div><dt>Push-ups</dt><dd>Daily</dd></div>
+        </dl>
+        <h3 class="label">The last 12 weeks</h3>
+        <div class="streak" id="streak" role="img" aria-label="A grid of the last 12 weeks. Every day is filled in: trained every day."></div>
+        <div class="train-cta">
+          <button class="btn btn--solid" id="do-set">Do a set with me</button>
+          <p class="train-count" id="train-count" aria-live="polite">Push-ups done on this page: <b>0</b></p>
         </div>
-        <div class="pad" aria-label="Touch controls">
-          <button class="pad-btn" data-key="left" aria-label="Move left">&#9664;</button>
-          <button class="pad-btn" data-key="right" aria-label="Move right">&#9654;</button>
-          <button class="pad-btn pad-btn--a" data-key="jump" aria-label="Jump">A</button>
+      </section>
+
+      <!-- 10:00 -->
+      <section class="ch" id="about" data-ch="2">
+        <p class="stamp"><time>10:00</time><span>About</span></p>
+        <h2 class="h2">I like knowing what happens <em>under the hood</em>.</h2>
+        <div class="prose">
+          <p>I started at 1337 (42 Network) in Morocco, writing memory allocators, shells, thread-synchronised simulations and network servers from scratch in C and C++, with no external libraries. That&rsquo;s where I learned how memory, processes and sockets really behave.</p>
+          <p>From there I founded Cagrex, a developer-assessment platform I built alone end to end, then joined Lysi Consulting as a full-stack developer shipping AI features into a live production platform. I also freelance on Upwork, including a full Next.js build and deployment for a TELUS Digital client. Right now I&rsquo;m building mobile games with Godot and Unity, with Claude Code in the loop.</p>
         </div>
-      </div>
-    </div>
+        <h3 class="label">On the desk</h3>
+        <ul class="tools">
+          <li>C</li><li>C++</li><li>Python</li><li>TypeScript</li><li>Next.js</li><li>NestJS</li><li>React</li><li>PostgreSQL</li><li>Docker</li><li>Godot</li><li>Unity</li><li>Claude Code</li>
+        </ul>
+        <h3 class="label">How I work</h3>
+        <ol class="principles">
+          <li><strong>From scratch first.</strong> I&rsquo;ve built the allocator, the shell and the server myself, so I know what the abstractions cost.</li>
+          <li><strong>End to end.</strong> Database, API, UI, deploy: I like owning the whole thing until it&rsquo;s live.</li>
+          <li><strong>AI in the loop.</strong> I build with Claude Code every day, and I&rsquo;ve built products that measure how developers work with AI.</li>
+        </ol>
+      </section>
 
-    <div class="ticker" aria-hidden="true">
-      <div class="ticker-track">
-        <span>Now accepting quests</span><i></i><span>Freelance &amp; full-time</span><i></i><span>Product design</span><i></i><span>Creative development</span><i></i><span>Based in City, Country</span><i></i>
-        <span>Now accepting quests</span><i></i><span>Freelance &amp; full-time</span><i></i><span>Product design</span><i></i><span>Creative development</span><i></i><span>Based in City, Country</span><i></i>
-      </div>
-    </div>
-  </section>
+      <!-- 13:30 -->
+      <section class="ch" id="work" data-ch="3">
+        <p class="stamp"><time>13:30</time><span>Selected work</span></p>
+        <h2 class="h2">Things I&rsquo;ve made, <em>shipped</em>, and learned from.</h2>
+        <p class="aside">Hover a project to put it on the studio monitor.</p>
+        <ol class="works" id="works"></ol>
+      </section>
 
-  <!-- ============ ABOUT ============ -->
-  <section class="section" id="about">
-    <div class="wrap">
-      <header class="sec-head">
-        <p class="eyebrow px">World 1-1 &middot; Player</p>
-        <h2 class="sec-title">The character behind the controller.</h2>
-      </header>
+      <!-- 15:45 -->
+      <section class="ch" id="knowledge" data-ch="4">
+        <p class="stamp"><time>15:45</time><span>The library</span></p>
+        <h2 class="h2">Every shelf is something I <em>know</em>.</h2>
+        <p class="aside">Each colour on the bookshelf is a subject. Hover one here or click the books in the room.</p>
+        <ol class="library" id="library"></ol>
+      </section>
 
-      <div class="about">
-        <article class="card-char" id="char-card">
-          <div class="char-top">
-            <span class="px">P1</span>
-            <span class="px">Class: Designer / Dev</span>
-          </div>
-          <div class="char-portrait">
-            <canvas id="avatar" width="24" height="24" aria-label="Pixel avatar"></canvas>
-          </div>
-          <div class="char-plate">
-            <p class="char-name">Your Name</p>
-            <p class="px char-lv">LV 07 &middot; City, Country</p>
-          </div>
-          <ul class="stats" id="stats">
-            <li><span class="px">Design</span><span class="bar" style="--v:9"></span><span class="px num">09</span></li>
-            <li><span class="px">Frontend</span><span class="bar" style="--v:8"></span><span class="px num">08</span></li>
-            <li><span class="px">Motion</span><span class="bar" style="--v:7"></span><span class="px num">07</span></li>
-            <li><span class="px">Pixel art</span><span class="bar" style="--v:8"></span><span class="px num">08</span></li>
-            <li><span class="px">Strategy</span><span class="bar" style="--v:6"></span><span class="px num">06</span></li>
-          </ul>
-          <button class="hidden-coin" aria-label="Hidden coin"><span class="coin-icon"></span></button>
-        </article>
-
-        <div class="about-copy">
-          <p class="big">Short intro statement goes here. One or two lines about who you are and the kind of work you love to make.</p>
-          <p>A longer paragraph for your story. Where you started, what you care about, and how you like to work with teams. Keep it personal and specific. This is placeholder copy to show how a real paragraph sits in the layout.</p>
-          <p>A second paragraph for anything else: side projects, teaching, awards, or what you do when you are away from the screen.</p>
-
-          <h3 class="mini-head px">Loadout</h3>
-          <ul class="loadout">
-            <li data-tip="Tool 01 · Daily"><span class="slot-key px">01</span>Figma</li>
-            <li data-tip="Tool 02 · Daily"><span class="slot-key px">02</span>React</li>
-            <li data-tip="Tool 03 · Weekly"><span class="slot-key px">03</span>TypeScript</li>
-            <li data-tip="Tool 04 · Weekly"><span class="slot-key px">04</span>Three.js</li>
-            <li data-tip="Tool 05 · Weekly"><span class="slot-key px">05</span>Aseprite</li>
-            <li data-tip="Tool 06 · Monthly"><span class="slot-key px">06</span>Blender</li>
-            <li data-tip="Tool 07 · Monthly"><span class="slot-key px">07</span>After Effects</li>
-            <li data-tip="Tool 08 · Always"><span class="slot-key px">08</span>Notebook</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ EXPERIENCE ============ -->
-  <section class="section section--alt" id="quests">
-    <div class="wrap">
-      <header class="sec-head sec-head--row">
-        <div>
-          <p class="eyebrow px">World 1-2 &middot; Quest log</p>
-          <h2 class="sec-title">Where I&rsquo;ve leveled up.</h2>
-        </div>
-        <p class="sec-note">Newest first. Open a quest to see what was shipped and what dropped.</p>
-      </header>
-
-      <ol class="quests" id="quest-list">
-        <li class="quest is-open">
-          <button class="quest-head" aria-expanded="true" aria-controls="q1">
-            <span class="quest-lv px">LV 07</span>
-            <span class="quest-main">
-              <span class="quest-role">Job Title</span>
-              <span class="quest-org">Company Name &middot; City</span>
-            </span>
-            <span class="quest-date px">2024 &mdash; Now</span>
-            <span class="chip chip--live px">In progress</span>
-            <span class="quest-toggle" aria-hidden="true"></span>
-          </button>
-          <div class="quest-body" id="q1">
-            <div class="quest-inner">
-              <p>Two or three sentences on the role: the team, the product, and what you were responsible for. Placeholder text to show the rhythm of a real description.</p>
-              <ul class="loot">
-                <li><span class="px">+XP</span> Key achievement with a number, such as a metric you moved.</li>
-                <li><span class="px">+XP</span> A second achievement: something you led, launched, or built.</li>
-                <li><span class="px">+XP</span> A third: a process, system, or team you improved.</li>
+      <!-- 18:15 -->
+      <section class="ch" id="log" data-ch="5">
+        <p class="stamp"><time>18:15</time><span>Logbook</span></p>
+        <h2 class="h2">Every frame on the wall is a <em>chapter</em>.</h2>
+        <p class="aside">Hover a role to light up its frame above the desk.</p>
+        <ol class="log" id="log-list">
+          <li class="job is-open">
+            <button class="job-row" aria-expanded="true" aria-controls="j0">
+              <span class="job-date">2026 &ndash; Now</span>
+              <span class="job-main"><span class="job-role">Freelance Web Engineer</span><span class="job-org">Upwork, remote</span></span>
+              <span class="job-sign" aria-hidden="true"></span>
+            </button>
+            <div class="job-body" id="j0"><div class="job-inner">
+              <p>Freelance web engineering on Upwork.</p>
+              <ul>
+                <li>Delivered <a href="https://gulfblueconcepts.com" target="_blank" rel="noopener">gulfblueconcepts.com</a> end to end for a TELUS Digital client: design, Next.js 14 build and production deployment.</li>
+                <li>Set up the server myself: AWS EC2, Nginx reverse proxy, PM2 and Let&rsquo;s Encrypt SSL.</li>
+                <li>Earned a repeat engagement from the same client.</li>
               </ul>
-              <div class="tags"><span>Skill</span><span>Skill</span><span>Skill</span></div>
-            </div>
-          </div>
-        </li>
-
-        <li class="quest">
-          <button class="quest-head" aria-expanded="false" aria-controls="q2">
-            <span class="quest-lv px">LV 05</span>
-            <span class="quest-main">
-              <span class="quest-role">Job Title</span>
-              <span class="quest-org">Company Name &middot; City</span>
-            </span>
-            <span class="quest-date px">2021 &mdash; 2024</span>
-            <span class="chip px">Completed</span>
-            <span class="quest-toggle" aria-hidden="true"></span>
-          </button>
-          <div class="quest-body" id="q2">
-            <div class="quest-inner">
-              <p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p>
-              <ul class="loot">
-                <li><span class="px">+XP</span> Key achievement with a number.</li>
-                <li><span class="px">+XP</span> Something you led or launched.</li>
+            </div></div>
+          </li>
+          <li class="job">
+            <button class="job-row" aria-expanded="false" aria-controls="j1">
+              <span class="job-date">Feb &ndash; Aug 2026</span>
+              <span class="job-main"><span class="job-role">Full-Stack Developer</span><span class="job-org">Lysi Consulting</span></span>
+              <span class="job-sign" aria-hidden="true"></span>
+            </button>
+            <div class="job-body" id="j1"><div class="job-inner">
+              <p>Full-stack work on an AI-powered HR and recruitment platform, shipping inside a live production system.</p>
+              <ul>
+                <li>Built AI-driven features in TypeScript and Node.js with LLM integrations.</li>
+                <li>Built a NetSuite integration with OAuth 2.0 machine-to-machine authentication.</li>
               </ul>
-              <div class="tags"><span>Skill</span><span>Skill</span></div>
-            </div>
-          </div>
-        </li>
-
-        <li class="quest">
-          <button class="quest-head" aria-expanded="false" aria-controls="q3">
-            <span class="quest-lv px">LV 03</span>
-            <span class="quest-main">
-              <span class="quest-role">Job Title</span>
-              <span class="quest-org">Company Name &middot; City</span>
-            </span>
-            <span class="quest-date px">2019 &mdash; 2021</span>
-            <span class="chip px">Completed</span>
-            <span class="quest-toggle" aria-hidden="true"></span>
-          </button>
-          <div class="quest-body" id="q3">
-            <div class="quest-inner">
-              <p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p>
-              <ul class="loot">
-                <li><span class="px">+XP</span> Key achievement with a number.</li>
-                <li><span class="px">+XP</span> Something you led or launched.</li>
+            </div></div>
+          </li>
+          <li class="job">
+            <button class="job-row" aria-expanded="false" aria-controls="j2">
+              <span class="job-date">Jun &ndash; Dec 2025</span>
+              <span class="job-main"><span class="job-role">Founder &amp; Full-Stack Engineer</span><span class="job-org">Cagrex</span></span>
+              <span class="job-sign" aria-hidden="true"></span>
+            </button>
+            <div class="job-body" id="j2"><div class="job-inner">
+              <p>Founded <a href="https://cagrex.com" target="_blank" rel="noopener">Cagrex</a>, a developer-assessment platform for the AI era, and built the whole product alone.</p>
+              <ul>
+                <li>Two-phase assessments: logic challenges, then real build tasks with an AI assistant inside E2B sandboxes on a fixed token budget.</li>
+                <li>RLHF-style evaluation rubrics scoring code understanding, efficiency and working style.</li>
+                <li>Next.js, NestJS, PostgreSQL, Claude and Gemini APIs.</li>
               </ul>
-              <div class="tags"><span>Skill</span><span>Skill</span></div>
-            </div>
+            </div></div>
+          </li>
+          <li class="job">
+            <button class="job-row" aria-expanded="false" aria-controls="j3">
+              <span class="job-date">The start</span>
+              <span class="job-main"><span class="job-role">Common Core</span><span class="job-org">1337 Coding School &middot; 42 Network, Morocco</span></span>
+              <span class="job-sign" aria-hidden="true"></span>
+            </button>
+            <div class="job-body" id="j3"><div class="job-inner">
+              <p>Peer-to-peer, project-based school. Completed the Common Core writing C and C++ with no external libraries: ft_malloc, minishell, Philosophers, an IRC server, cub3D, and Inception / IoT on the ops side.</p>
+            </div></div>
+          </li>
+        </ol>
+      </section>
+
+      <!-- 22:30 -->
+      <section class="ch ch--contact" id="contact" data-ch="6">
+        <p class="stamp"><time>22:30</time><span>Contact</span></p>
+        <h2 class="hello">Say<br>hello</h2>
+        <p class="lede">Open to full-time roles and freelance projects. Systems, full-stack or games: tell me what you&rsquo;re building.</p>
+
+        <div class="email-row">
+          <span class="email" id="email">adilasselman137@gmail.com</span>
+          <button class="btn" id="copy">Copy</button>
+        </div>
+        <ul class="links">
+          <li><a href="mailto:adilasselman137@gmail.com">Email</a></li>
+          <li><a href="https://play.google.com/store/apps/details?id=com.leap2joy.murmur" target="_blank" rel="noopener">Flockfall</a></li>
+          <li><a href="https://cagrex.com" target="_blank" rel="noopener">Cagrex</a></li>
+          <li><a href="#" data-placeholder>LinkedIn</a></li>
+          <li><a href="#" data-placeholder>GitHub</a></li>
+        </ul>
+
+        <form class="note-form" id="note-form">
+          <div class="note" id="note-preview" aria-hidden="true">
+            <p class="note-text" id="note-text">Your note shows up here&hellip;</p>
+            <p class="note-sig" id="note-sig">&mdash; you</p>
           </div>
-        </li>
-
-        <li class="quest">
-          <button class="quest-head" aria-expanded="false" aria-controls="q4">
-            <span class="quest-lv px">LV 01</span>
-            <span class="quest-main">
-              <span class="quest-role">Degree or first role</span>
-              <span class="quest-org">School or Company &middot; City</span>
-            </span>
-            <span class="quest-date px">2015 &mdash; 2019</span>
-            <span class="chip px">Completed</span>
-            <span class="quest-toggle" aria-hidden="true"></span>
-          </button>
-          <div class="quest-body" id="q4">
-            <div class="quest-inner">
-              <p>Where it started. A sentence or two on your studies or first job.</p>
-              <div class="tags"><span>Skill</span><span>Skill</span></div>
-            </div>
+          <div class="note-fields">
+            <h3 class="label">Leave a note on the board</h3>
+            <div class="field"><label for="n-name">Name</label><input id="n-name" name="name" autocomplete="name" maxlength="40"></div>
+            <div class="field"><label for="n-msg">Message</label><textarea id="n-msg" name="message" rows="3" maxlength="160" required></textarea></div>
+            <button class="btn btn--solid" type="submit">Pin it to the board</button>
+            <p class="note-status" id="note-status" role="status"></p>
           </div>
-        </li>
-      </ol>
-      <button class="hidden-coin hidden-coin--quests" aria-label="Hidden coin"><span class="coin-icon"></span></button>
-    </div>
-  </section>
+        </form>
 
-  <!-- ============ WORK ============ -->
-  <section class="section" id="inventory">
-    <div class="wrap">
-      <header class="sec-head sec-head--row">
-        <div>
-          <p class="eyebrow px">World 1-3 &middot; Inventory</p>
-          <h2 class="sec-title">Selected work, sorted by rarity.</h2>
-        </div>
-        <div class="filters" role="group" aria-label="Filter projects">
-          <button class="filter is-on px" data-filter="all" aria-pressed="true">All</button>
-          <button class="filter px" data-filter="product" aria-pressed="false">Product</button>
-          <button class="filter px" data-filter="web" aria-pressed="false">Web</button>
-          <button class="filter px" data-filter="game" aria-pressed="false">Game</button>
-          <button class="filter px" data-filter="brand" aria-pressed="false">Brand</button>
-        </div>
-      </header>
-
-      <ul class="inv" id="inv"></ul>
-    </div>
-  </section>
-
-  <!-- ============ CONTACT ============ -->
-  <section class="section section--save" id="save">
-    <div class="wrap save">
-      <header class="sec-head">
-        <p class="eyebrow px">World 1-4 &middot; Save point</p>
-        <h2 class="sec-title sec-title--xl">Let&rsquo;s build the next level together.</h2>
-      </header>
-
-      <div class="dialog-box" id="dialog-box">
-        <div class="npc" aria-hidden="true"><canvas id="npc" width="16" height="16"></canvas></div>
-        <div class="dialog-main">
-          <p class="dialog-name px">Your Name</p>
-          <p class="dialog-text" id="dialog-text">Hey, traveler! Looking for a designer who can also ship code? Pick an option below and let&rsquo;s talk.</p>
-
-          <ul class="choices" id="choices">
-            <li><button class="choice" data-act="copy"><span class="px">Copy email</span><span class="choice-val" id="email-val">hello@yourname.com</span></button></li>
-            <li><button class="choice" data-act="form"><span class="px">Send a message</span><span class="choice-val">Opens a quick form</span></button></li>
-            <li><a class="choice" href="#" data-act="link"><span class="px">LinkedIn</span><span class="choice-val">linkedin.com/in/yourname</span></a></li>
-            <li><a class="choice" href="#" data-act="link"><span class="px">GitHub</span><span class="choice-val">github.com/yourname</span></a></li>
-          </ul>
-
-          <form class="msg-form" id="msg-form" hidden>
-            <div class="field"><label class="px" for="f-name">Name</label><input id="f-name" name="name" autocomplete="name" required></div>
-            <div class="field"><label class="px" for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
-            <div class="field field--full"><label class="px" for="f-msg">Message</label><textarea id="f-msg" name="message" rows="4" required></textarea></div>
-            <div class="form-row">
-              <button type="button" class="px-btn px-btn--ghost" id="form-back">Back</button>
-              <button type="submit" class="px-btn">Save &amp; send</button>
-            </div>
-            <p class="form-note" id="form-note" role="status"></p>
-          </form>
-        </div>
-        <span class="dialog-caret" aria-hidden="true"></span>
-      </div>
-      <button class="hidden-coin hidden-coin--save" aria-label="Hidden coin"><span class="coin-icon"></span></button>
-    </div>
-  </section>
-</main>
-
-<footer class="footer">
-  <div class="wrap footer-inner">
-    <p class="footer-big px">Thanks for playing</p>
-    <div class="footer-row">
-      <p>&copy; <span id="year">2026</span> Your Name. Built with pixels and care.</p>
-      <p class="px footer-secret">Hint: &uarr; &uarr; &darr; &darr; &larr; &rarr; &larr; &rarr; B A</p>
-      <a class="px-btn" href="#top">Continue? &#9650;</a>
-    </div>
+        <footer class="foot">
+          <p>&copy; <span id="year">2026</span> Adil Asselman</p>
+          <p>Lights out at 23:59</p>
+        </footer>
+      </section>
+    </main>
   </div>
-</footer>
+</div>
 
-<!-- Project inspect modal -->
-<dialog class="inspect" id="inspect" aria-labelledby="inspect-title">
-  <div class="inspect-inner">
-    <div class="inspect-bar">
-      <span class="px">Item inspect</span>
-      <button class="inspect-close px" id="inspect-close" aria-label="Close">&times; Esc</button>
-    </div>
-    <div class="inspect-body">
-      <canvas class="inspect-cover" id="inspect-cover" width="40" height="28" aria-hidden="true"></canvas>
-      <div class="inspect-info">
-        <p class="px inspect-rarity" id="inspect-rarity">Legendary</p>
-        <h3 class="inspect-title" id="inspect-title">Project</h3>
-        <p class="inspect-desc" id="inspect-desc"></p>
-        <dl class="inspect-stats" id="inspect-stats"></dl>
-        <div class="form-row">
-          <a class="px-btn" href="#" id="inspect-link">View case study</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</dialog>
+<div class="peek" id="peek" aria-hidden="true"><canvas id="peek-canvas" width="32" height="24"></canvas><span class="peek-label" id="peek-label"></span></div>
 
-<div class="toasts" id="toasts" aria-live="polite"></div>
-<div class="crt-overlay" aria-hidden="true"></div>
-
-<script src="assets/js/main.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
