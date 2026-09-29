@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Riso Press Portfolio</title>
+<meta name="description" content="Portfolio of Your Name, printed in two inks. Placeholder content.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#about">Skip to content</a>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="mast">
+  <div class="wrap mast-inner">
+    <a class="mark" href="#top">Your Name</a>
+    <p class="issue mono">Portfolio &middot; Issue 04 &middot; Autumn 2026</p>
+    <nav class="nav" aria-label="Sections">
+      <a href="#about">About</a>
+      <a href="#work">Work</a>
+      <a href="#log">Log</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ COVER ============ -->
+  <section class="cover">
+    <div class="wrap">
+      <div class="cover-meta mono">
+        <span>Printed in City, Country</span>
+        <span>Two-colour risograph edition</span>
+        <span class="page">p. 01</span>
+      </div>
+
+      <div class="press" id="press">
+        <span class="crop crop--tl" aria-hidden="true"></span><span class="crop crop--tr" aria-hidden="true"></span>
+        <span class="crop crop--bl" aria-hidden="true"></span><span class="crop crop--br" aria-hidden="true"></span>
+        <span class="reg reg--l" aria-hidden="true"></span><span class="reg reg--r" aria-hidden="true"></span>
+        <h1 class="sr-only">Your Name</h1>
+        <canvas id="press-canvas" aria-hidden="true"></canvas>
+        <p class="press-fallback" aria-hidden="true">YOUR NAME</p>
+      </div>
+
+      <div class="press-bar">
+        <p class="mono press-hint" id="press-hint">Drag the letters. Click the paper to knock them over.</p>
+        <div class="press-actions">
+          <button class="btn" id="shake">Shake</button>
+          <button class="btn btn--ghost" id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="intro">
+        <p class="lede">Role title. I design and build digital products with the care of a <mark>printed page</mark>: bold, tactile, and made to last.</p>
+        <dl class="facts mono">
+          <div><dt>Based in</dt><dd>City, Country</dd></div>
+          <div><dt>Currently</dt><dd>Job Title at Company Name</dd></div>
+          <div><dt>Available</dt><dd>From Month 2026</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="sec" id="about">
+    <div class="wrap">
+      <header class="sec-head">
+        <p class="mono kicker"><span class="page">p. 02</span> About</p>
+        <h2 class="h2">A designer who <span class="over" data-text="codes">codes</span>, a developer who draws.</h2>
+      </header>
+      <div class="about">
+        <figure class="portrait">
+          <div class="portrait-box"><canvas id="portrait" aria-label="Halftone portrait placeholder"></canvas></div>
+          <figcaption class="mono">Fig. 1 &mdash; Portrait placeholder. Move your cursor over the dots.</figcaption>
+        </figure>
+        <div class="about-copy">
+          <p class="drop">A short intro about who you are and what you love making. This is placeholder copy, set to show how a real paragraph sits in the column at reading size.</p>
+          <p>A second paragraph for your story: where you started, what you care about, and how you like to work with teams, founders, and clients.</p>
+          <blockquote class="pull">
+            <p>&ldquo;A short quote that sums up how you work, or a line a client once said about you.&rdquo;</p>
+            <cite class="mono">&mdash; Name, Role at Company</cite>
+          </blockquote>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WORK ============ -->
+  <section class="sec sec--work" id="work">
+    <div class="wrap">
+      <header class="sec-head sec-head--row">
+        <div>
+          <p class="mono kicker"><span class="page">p. 03</span> Selected work</p>
+          <h2 class="h2">Six prints from the archive.</h2>
+        </div>
+        <div class="strip-controls">
+          <span class="mono" id="strip-count">01 / 06</span>
+          <button class="round" id="strip-prev" aria-label="Previous project">&larr;</button>
+          <button class="round" id="strip-next" aria-label="Next project">&rarr;</button>
+        </div>
+      </header>
+    </div>
+    <ol class="strip" id="strip" aria-label="Projects"></ol>
+    <div class="wrap"><p class="mono strip-hint">Drag sideways or use the arrows. Hover a print to see its two ink layers.</p></div>
+  </section>
+
+  <!-- ============ TOOLS ============ -->
+  <section class="sec" id="tools">
+    <div class="wrap">
+      <header class="sec-head sec-head--row">
+        <div>
+          <p class="mono kicker"><span class="page">p. 04</span> Tools</p>
+          <h2 class="h2">Everything in the tray.</h2>
+        </div>
+        <button class="btn" id="tray-shake">Shake the tray</button>
+      </header>
+      <div class="tray" id="tray">
+        <canvas id="tray-canvas" aria-hidden="true"></canvas>
+        <ul class="sr-only" id="tool-list"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LOG ============ -->
+  <section class="sec" id="log">
+    <div class="wrap">
+      <header class="sec-head">
+        <p class="mono kicker"><span class="page">p. 05</span> Print log</p>
+        <h2 class="h2">Where the work was made.</h2>
+      </header>
+      <div class="log" role="list">
+        <div class="log-head mono" aria-hidden="true"><span>Run</span><span>Role</span><span>Company</span><span>Place</span><span></span></div>
+
+        <div class="run is-open" role="listitem">
+          <button class="run-row" aria-expanded="true" aria-controls="r0">
+            <span class="mono run-years">2024&ndash;Now</span>
+            <span class="run-role">Job Title</span>
+            <span class="run-co">Company Name</span>
+            <span class="mono run-place">City</span>
+            <span class="run-sign" aria-hidden="true"></span>
+          </button>
+          <div class="run-body" id="r0"><div class="run-inner">
+            <p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p>
+            <ul><li>Key achievement with a number, such as a metric you moved.</li><li>Something you led, launched, or built.</li><li>A process, system, or team you improved.</li></ul>
+          </div></div>
+        </div>
+
+        <div class="run" role="listitem">
+          <button class="run-row" aria-expanded="false" aria-controls="r1">
+            <span class="mono run-years">2021&ndash;2024</span>
+            <span class="run-role">Job Title</span>
+            <span class="run-co">Company Name</span>
+            <span class="mono run-place">City</span>
+            <span class="run-sign" aria-hidden="true"></span>
+          </button>
+          <div class="run-body" id="r1"><div class="run-inner">
+            <p>Two or three sentences on the role.</p>
+            <ul><li>Key achievement with a number.</li><li>Something you led or launched.</li></ul>
+          </div></div>
+        </div>
+
+        <div class="run" role="listitem">
+          <button class="run-row" aria-expanded="false" aria-controls="r2">
+            <span class="mono run-years">2019&ndash;2021</span>
+            <span class="run-role">Job Title</span>
+            <span class="run-co">Company Name</span>
+            <span class="mono run-place">City</span>
+            <span class="run-sign" aria-hidden="true"></span>
+          </button>
+          <div class="run-body" id="r2"><div class="run-inner">
+            <p>Two or three sentences on the role.</p>
+            <ul><li>Key achievement with a number.</li><li>Something you led or launched.</li></ul>
+          </div></div>
+        </div>
+
+        <div class="run" role="listitem">
+          <button class="run-row" aria-expanded="false" aria-controls="r3">
+            <span class="mono run-years">2015&ndash;2019</span>
+            <span class="run-role">Degree or first role</span>
+            <span class="run-co">School or Company</span>
+            <span class="mono run-place">City</span>
+            <span class="run-sign" aria-hidden="true"></span>
+          </button>
+          <div class="run-body" id="r3"><div class="run-inner">
+            <p>Where it started. A sentence or two on your studies or first job.</p>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="sec sec--contact" id="contact">
+    <div class="wrap">
+      <p class="mono kicker"><span class="page">p. 06</span> Contact</p>
+      <h2 class="big-ask">Let&rsquo;s make something worth <span class="over" data-text="printing.">printing.</span></h2>
+
+      <div class="contact">
+        <div class="contact-left">
+          <p class="email-line"><span id="email">hello@yourname.com</span></p>
+          <div class="contact-actions">
+            <button class="btn" id="copy">Copy email</button>
+          </div>
+          <ul class="links mono">
+            <li><a href="#" data-placeholder>LinkedIn &nearr;</a></li>
+            <li><a href="#" data-placeholder>GitHub &nearr;</a></li>
+            <li><a href="#" data-placeholder>Are.na &nearr;</a></li>
+            <li><a href="#" data-placeholder>R&eacute;sum&eacute; &nearr;</a></li>
+          </ul>
+        </div>
+
+        <form class="order" id="order">
+          <p class="mono order-title">Order form &mdash; No. 0001</p>
+          <div class="field"><label class="mono" for="o-name">Name</label><input id="o-name" name="name" autocomplete="name" required></div>
+          <div class="field"><label class="mono" for="o-email">Email</label><input id="o-email" name="email" type="email" autocomplete="email" required></div>
+          <fieldset class="field">
+            <legend class="mono">Project type</legend>
+            <div class="checks">
+              <label><input type="checkbox" id="o-t1" name="type" value="product"> Product</label>
+              <label><input type="checkbox" id="o-t2" name="type" value="web"> Website</label>
+              <label><input type="checkbox" id="o-t3" name="type" value="brand"> Brand</label>
+              <label><input type="checkbox" id="o-t4" name="type" value="other"> Something else</label>
+            </div>
+          </fieldset>
+          <div class="field"><label class="mono" for="o-msg">Message</label><textarea id="o-msg" name="message" rows="4" required></textarea></div>
+          <button class="btn" type="submit">Stamp &amp; send</button>
+          <p class="mono order-note" id="order-note" role="status"></p>
+          <div class="stamp" id="stamp" aria-hidden="true" hidden><span>Received</span><small class="mono" id="stamp-date"></small></div>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="bars" aria-label="Colour bar">
+      <span style="--t:100%"></span><span style="--t:70%"></span><span style="--t:40%"></span><span style="--t:15%"></span>
+      <span class="b" style="--t:100%"></span><span class="b" style="--t:70%"></span><span class="b" style="--t:40%"></span><span class="b" style="--t:15%"></span>
+      <span class="ab"></span>
+    </div>
+    <div class="foot-row mono">
+      <p>&copy; <span id="year">2026</span> Your Name. Printed in two inks on a web browser.</p>
+      <p id="ink-name">Fluorescent Pink + Medium Blue</p>
+      <a href="#top">Back to cover &uarr;</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Ink switcher -->
+<div class="inks" id="inks">
+  <div class="ink-options" id="ink-options" hidden></div>
+  <button class="ink-toggle" id="ink-toggle" aria-expanded="false" aria-controls="ink-options">
+    <span class="ink-dots" aria-hidden="true"><i></i><i></i></span><span class="mono">Inks</span>
+  </button>
+</div>
+
+<!-- Poster modal -->
+<dialog class="viewer" id="viewer" aria-labelledby="v-title">
+  <div class="viewer-inner">
+    <div class="viewer-art" id="viewer-art"></div>
+    <div class="viewer-info">
+      <button class="round viewer-close" id="viewer-close" aria-label="Close">&times;</button>
+      <p class="mono" id="v-meta"></p>
+      <h3 class="h3" id="v-title"></h3>
+      <p id="v-desc"></p>
+      <dl class="facts mono" id="v-facts"></dl>
+      <a class="btn" href="#" data-placeholder>Read the case study</a>
+    </div>
+  </div>
+</dialog>
+
+<div class="roller" id="roller" aria-hidden="true"></div>
+<div class="cursor" id="cursor" aria-hidden="true"><span id="cursor-label"></span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

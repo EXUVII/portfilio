@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nav Console Portfolio</title>
+<meta name="description" content="Portfolio of Your Name. A calm, sci-fi styled one-page portfolio. Placeholder content.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span>Your Name</a>
+    <nav class="links" id="links" aria-label="Sections">
+      <a href="#about">About</a>
+      <a href="#work">Work</a>
+      <a href="#experience">Experience</a>
+      <a href="#contact" class="btn btn--small">Get in touch</a>
+    </nav>
+    <button class="menu-btn mono" id="menu-btn" aria-expanded="false" aria-controls="links">Menu</button>
+  </div>
+</header>
+
+<main id="top">
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <canvas id="galaxy" aria-hidden="true"></canvas>
+    <div class="hero-fade" aria-hidden="true"></div>
+    <div class="wrap hero-inner">
+      <p class="kicker mono"><span class="live" aria-hidden="true"></span>Available for work &middot; 2026</p>
+      <h1 class="hero-title">Your Name</h1>
+      <p class="hero-sub">Role title. I design and build clear, fast interfaces for products that feel like the future.</p>
+      <div class="hero-actions">
+        <a class="btn" href="#work">View my work</a>
+        <a class="btn btn--ghost" href="#contact">Contact me</a>
+      </div>
+    </div>
+    <a class="scroll mono" href="#about" aria-label="Scroll to About"><span></span>Scroll</a>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="sec" id="about">
+    <div class="wrap">
+      <p class="sec-label mono"><span>01</span> About</p>
+      <div class="about">
+        <div>
+          <h2 class="sec-title">Hi, I&rsquo;m Your Name.</h2>
+          <p class="lead">A short intro statement. One or two lines about who you are and the kind of work you love to make.</p>
+          <p>A longer paragraph for your story: where you started, what you care about, and how you like to work with teams. This is placeholder copy to show how a real paragraph sits in the layout.</p>
+        </div>
+        <div class="panel">
+          <div class="stats">
+            <div><b>8</b><span class="mono">Years</span></div>
+            <div><b>40+</b><span class="mono">Projects</span></div>
+            <div><b>12</b><span class="mono">Teams</span></div>
+          </div>
+          <ul class="skills">
+            <li><span>Interface design</span><i style="--v:92%"></i></li>
+            <li><span>Frontend engineering</span><i style="--v:88%"></i></li>
+            <li><span>Motion &amp; interaction</span><i style="--v:78%"></i></li>
+            <li><span>3D &amp; WebGL</span><i style="--v:70%"></i></li>
+          </ul>
+          <ul class="chips mono"><li>Figma</li><li>React</li><li>TypeScript</li><li>Three.js</li><li>Blender</li><li>Framer</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WORK ============ -->
+  <section class="sec" id="work">
+    <div class="wrap">
+      <p class="sec-label mono"><span>02</span> Work</p>
+      <h2 class="sec-title">Selected projects</h2>
+      <ul class="grid" id="grid"></ul>
+    </div>
+  </section>
+
+  <!-- ============ EXPERIENCE ============ -->
+  <section class="sec" id="experience">
+    <div class="wrap">
+      <p class="sec-label mono"><span>03</span> Experience</p>
+      <h2 class="sec-title">Where I&rsquo;ve worked</h2>
+      <ol class="timeline">
+        <li>
+          <p class="mono t-date">2024 &ndash; Now</p>
+          <div><h3>Job Title</h3><p class="t-co">Company Name &middot; City</p><p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p></div>
+        </li>
+        <li>
+          <p class="mono t-date">2021 &ndash; 2024</p>
+          <div><h3>Job Title</h3><p class="t-co">Company Name &middot; City</p><p>Two or three sentences on the role and a key achievement.</p></div>
+        </li>
+        <li>
+          <p class="mono t-date">2019 &ndash; 2021</p>
+          <div><h3>Job Title</h3><p class="t-co">Company Name &middot; City</p><p>Two or three sentences on the role and a key achievement.</p></div>
+        </li>
+        <li>
+          <p class="mono t-date">2015 &ndash; 2019</p>
+          <div><h3>Degree or first role</h3><p class="t-co">School or Company &middot; City</p><p>Where it started. A sentence or two on your studies or first job.</p></div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="sec sec--contact" id="contact">
+    <div class="wrap">
+      <p class="sec-label mono"><span>04</span> Contact</p>
+      <div class="contact">
+        <div>
+          <h2 class="sec-title">Let&rsquo;s build something together.</h2>
+          <p class="lead">Open to freelance projects and full-time roles from Month 2026.</p>
+          <div class="email"><span id="email">hello@yourname.com</span><button class="btn btn--small" id="copy">Copy</button></div>
+          <ul class="social mono">
+            <li><a href="#" data-placeholder>LinkedIn</a></li>
+            <li><a href="#" data-placeholder>GitHub</a></li>
+            <li><a href="#" data-placeholder>Dribbble</a></li>
+          </ul>
+        </div>
+        <form class="panel form" id="form">
+          <div class="field"><label class="mono" for="f-name">Name</label><input id="f-name" name="name" autocomplete="name" required></div>
+          <div class="field"><label class="mono" for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
+          <div class="field"><label class="mono" for="f-msg">Message</label><textarea id="f-msg" name="message" rows="4" required></textarea></div>
+          <button class="btn" type="submit">Send message</button>
+          <p class="form-note mono" id="form-note" role="status"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner mono">
+    <p>&copy; <span id="year">2026</span> Your Name</p>
+    <a href="#top">Back to top &uarr;</a>
+  </div>
+</footer>
+
+<!-- Project details -->
+<dialog class="modal" id="modal" aria-labelledby="m-title">
+  <div class="modal-inner">
+    <button class="close" id="m-close" aria-label="Close">&times;</button>
+    <canvas class="holo" id="m-holo" width="720" height="400" aria-hidden="true"></canvas>
+    <div class="modal-body">
+      <p class="mono m-meta" id="m-meta"></p>
+      <h3 id="m-title"></h3>
+      <p id="m-desc"></p>
+      <dl class="specs mono" id="m-specs"></dl>
+      <a class="btn" href="#" data-placeholder>View case study</a>
+    </div>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

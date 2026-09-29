@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pocket Planet Portfolio</title>
+<meta name="description" content="Portfolio of Your Name. A tiny low-poly planet in the style of 64-bit consoles. Placeholder content.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400..900&family=Hanken+Grotesk:ital,wght@0,400..700;1,400&family=DotGothic16&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <canvas id="gl" aria-label="A small low-poly planet with a house, a gallery, a tower and a mailbox. Drag to spin it, click a place to visit it."></canvas>
+  <div class="gl-fallback" id="gl-fallback">
+    <p class="dot">3D view unavailable</p>
+    <p>Your browser could not start WebGL. Every section is still available from the menu.</p>
+  </div>
+</div>
+
+<div class="hover-label" id="hover-label" hidden><span class="dot" id="hl-place"></span><span id="hl-label"></span></div>
+
+<!-- ============ HUD ============ -->
+<header class="top">
+  <a class="brand" href="#" id="home">
+    <span class="brand-logo" aria-hidden="true"></span>
+    <span class="brand-text"><span class="brand-name">Your Name</span><span class="brand-role dot">Role title &middot; City, Country</span></span>
+  </a>
+  <div class="top-right">
+    <p class="hint dot" id="hint">Drag to spin &middot; click a place</p>
+    <button class="pill" id="settings-btn" aria-expanded="false" aria-controls="settings"><span class="pill-icon" aria-hidden="true"></span>Video settings</button>
+  </div>
+</header>
+
+<section class="hero" id="hero" aria-label="Introduction">
+  <p class="kicker dot">Portfolio &middot; 2026 &middot; Low-poly edition</p>
+  <h1 class="title" id="title"><span>Your</span><span>Name</span></h1>
+  <p class="sub">Designer &amp; developer building playful, precise products. This is my planet. Have a look around.</p>
+</section>
+
+<nav class="menu" id="menu" aria-label="Places on the planet">
+  <button class="menu-item" data-key="about" style="--c:#ff6f91"><span class="menu-dot"></span><span class="menu-place dot">House</span><span class="menu-label">About</span></button>
+  <button class="menu-item" data-key="work" style="--c:#ffd23f"><span class="menu-dot"></span><span class="menu-place dot">Gallery</span><span class="menu-label">Work</span></button>
+  <button class="menu-item" data-key="exp" style="--c:#7fd6ff"><span class="menu-dot"></span><span class="menu-place dot">Tower</span><span class="menu-label">Experience</span></button>
+  <button class="menu-item" data-key="contact" style="--c:#8be28b"><span class="menu-dot"></span><span class="menu-place dot">Mailbox</span><span class="menu-label">Contact</span></button>
+</nav>
+
+<!-- ============ PANELS ============ -->
+<aside class="panel" id="panel-about" data-key="about" aria-labelledby="t-about" hidden>
+  <div class="panel-head">
+    <p class="panel-place dot" style="--c:#ff6f91">House &middot; About</p>
+    <button class="close" aria-label="Close panel">&times;</button>
+  </div>
+  <div class="panel-body">
+    <h2 class="panel-title" id="t-about">Hi, I&rsquo;m Your Name.</h2>
+    <p class="lead">A short intro statement. One or two lines about who you are and the kind of work you love to make.</p>
+    <p>A longer paragraph for your story: where you started, what you care about, and how you like to work with teams. This is placeholder copy to show how a real paragraph sits in the panel.</p>
+    <dl class="facts">
+      <div><dt class="dot">Based in</dt><dd>City, Country</dd></div>
+      <div><dt class="dot">Currently</dt><dd>Job Title at Company Name</dd></div>
+      <div><dt class="dot">Open to</dt><dd>Freelance &amp; full-time</dd></div>
+    </dl>
+    <h3 class="sub-head dot">Toolbox</h3>
+    <ul class="chips">
+      <li>Figma</li><li>React</li><li>TypeScript</li><li>Three.js</li><li>Blender</li><li>Aseprite</li><li>After Effects</li><li>WebGL</li>
+    </ul>
+  </div>
+</aside>
+
+<aside class="panel" id="panel-work" data-key="work" aria-labelledby="t-work" hidden>
+  <div class="panel-head">
+    <p class="panel-place dot" style="--c:#ffd23f">Gallery &middot; Work</p>
+    <button class="close" aria-label="Close panel">&times;</button>
+  </div>
+  <div class="panel-body">
+    <div id="work-index">
+      <h2 class="panel-title" id="t-work">Selected work</h2>
+      <p class="muted">Every painting floating over the gallery is a project. Pick one here or click it on the planet.</p>
+      <ul class="works" id="works"></ul>
+    </div>
+    <div id="work-detail" hidden>
+      <button class="back dot" id="work-back">&larr; All work</button>
+      <canvas class="detail-art" id="detail-art" width="64" height="48" aria-hidden="true"></canvas>
+      <p class="detail-meta dot" id="detail-meta"></p>
+      <h2 class="panel-title" id="detail-title"></h2>
+      <p id="detail-desc"></p>
+      <dl class="facts" id="detail-facts"></dl>
+      <a class="btn" href="#" data-placeholder>View case study</a>
+    </div>
+  </div>
+</aside>
+
+<aside class="panel" id="panel-exp" data-key="exp" aria-labelledby="t-exp" hidden>
+  <div class="panel-head">
+    <p class="panel-place dot" style="--c:#7fd6ff">Tower &middot; Experience</p>
+    <button class="close" aria-label="Close panel">&times;</button>
+  </div>
+  <div class="panel-body">
+    <h2 class="panel-title" id="t-exp">Every floor is a job.</h2>
+    <p class="muted">The tower grows one floor per role. The newest is at the top.</p>
+    <ol class="jobs" id="jobs">
+      <li class="job is-open" style="--c:#ff6f91">
+        <button class="job-row" aria-expanded="true">
+          <span class="job-floor dot">4F</span>
+          <span class="job-main"><span class="job-role">Job Title</span><span class="job-org">Company Name &middot; City</span></span>
+          <span class="job-date dot">2024&ndash;Now</span>
+        </button>
+        <div class="job-body"><div class="job-inner">
+          <p>Two or three sentences on the role: the team, the product, and what you were responsible for.</p>
+          <ul><li>Key achievement with a number.</li><li>Something you led, launched, or built.</li><li>A process or team you improved.</li></ul>
+        </div></div>
+      </li>
+      <li class="job" style="--c:#ffd23f">
+        <button class="job-row" aria-expanded="false">
+          <span class="job-floor dot">3F</span>
+          <span class="job-main"><span class="job-role">Job Title</span><span class="job-org">Company Name &middot; City</span></span>
+          <span class="job-date dot">2021&ndash;2024</span>
+        </button>
+        <div class="job-body"><div class="job-inner">
+          <p>Two or three sentences on the role.</p>
+          <ul><li>Key achievement with a number.</li><li>Something you led or launched.</li></ul>
+        </div></div>
+      </li>
+      <li class="job" style="--c:#7fd6ff">
+        <button class="job-row" aria-expanded="false">
+          <span class="job-floor dot">2F</span>
+          <span class="job-main"><span class="job-role">Job Title</span><span class="job-org">Company Name &middot; City</span></span>
+          <span class="job-date dot">2019&ndash;2021</span>
+        </button>
+        <div class="job-body"><div class="job-inner">
+          <p>Two or three sentences on the role.</p>
+          <ul><li>Key achievement with a number.</li><li>Something you led or launched.</li></ul>
+        </div></div>
+      </li>
+      <li class="job" style="--c:#8be28b">
+        <button class="job-row" aria-expanded="false">
+          <span class="job-floor dot">1F</span>
+          <span class="job-main"><span class="job-role">Degree or first role</span><span class="job-org">School or Company &middot; City</span></span>
+          <span class="job-date dot">2015&ndash;2019</span>
+        </button>
+        <div class="job-body"><div class="job-inner">
+          <p>Where it started. A sentence or two on your studies or first job.</p>
+        </div></div>
+      </li>
+    </ol>
+  </div>
+</aside>
+
+<aside class="panel" id="panel-contact" data-key="contact" aria-labelledby="t-contact" hidden>
+  <div class="panel-head">
+    <p class="panel-place dot" style="--c:#8be28b">Mailbox &middot; Contact</p>
+    <button class="close" aria-label="Close panel">&times;</button>
+  </div>
+  <div class="panel-body">
+    <h2 class="panel-title" id="t-contact">Send a paper plane.</h2>
+    <p class="lead">Open to freelance projects and full-time roles from Month 2026.</p>
+    <div class="email">
+      <span id="email">hello@yourname.com</span>
+      <button class="btn btn--small" id="copy">Copy</button>
+    </div>
+    <ul class="links">
+      <li><a href="#" data-placeholder>LinkedIn</a></li>
+      <li><a href="#" data-placeholder>GitHub</a></li>
+      <li><a href="#" data-placeholder>Dribbble</a></li>
+      <li><a href="#" data-placeholder>R&eacute;sum&eacute;</a></li>
+    </ul>
+    <form class="form" id="form">
+      <div class="field"><label class="dot" for="f-name">Name</label><input id="f-name" name="name" autocomplete="name"></div>
+      <div class="field"><label class="dot" for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email"></div>
+      <div class="field"><label class="dot" for="f-msg">Message</label><textarea id="f-msg" name="message" rows="4" required></textarea></div>
+      <button class="btn" type="submit">Fold &amp; send</button>
+      <p class="form-status" id="form-status" role="status"></p>
+    </form>
+  </div>
+</aside>
+
+<!-- ============ VIDEO SETTINGS ============ -->
+<div class="settings" id="settings" hidden>
+  <div class="settings-head">
+    <p class="dot">Video settings</p>
+    <button class="close" id="settings-close" aria-label="Close settings">&times;</button>
+  </div>
+  <div class="set-row"><span>Resolution</span>
+    <div class="seg" data-set="res"><button data-v="240" aria-pressed="true">240p</button><button data-v="360" aria-pressed="false">360p</button><button data-v="480" aria-pressed="false">480p</button><button data-v="0" aria-pressed="false">HD</button></div></div>
+  <div class="set-row"><span>Dithering</span>
+    <div class="seg" data-set="dither"><button data-v="1" aria-pressed="true">On</button><button data-v="0" aria-pressed="false">Off</button></div></div>
+  <div class="set-row"><span>Vertex wobble</span>
+    <div class="seg" data-set="wobble"><button data-v="1" aria-pressed="true">On</button><button data-v="0" aria-pressed="false">Off</button></div></div>
+  <div class="set-row"><span>Haze</span>
+    <div class="seg" data-set="fog"><button data-v="1" aria-pressed="true">On</button><button data-v="0" aria-pressed="false">Off</button></div></div>
+  <div class="set-row"><span>Auto-spin</span>
+    <div class="seg" data-set="spin"><button data-v="1" aria-pressed="true">On</button><button data-v="0" aria-pressed="false">Off</button></div></div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
