@@ -653,6 +653,24 @@ function canvasTex(w, h, draw, { repeat = true, srgb = true } = {}) {
   return t;
 }
 // A copy of some of a geometry's material groups (for example only the sides of a box), for merging.
+/* Relief maps: draw a height field with the canvas API (light = raised), then turn it into a tangent-space
+   normal map. Used for the asphalt grain and the panel seams on the freight pods. */
+function heightField(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+  draw(g, w, h); const a = g.getImageData(0, 0, w, h).data, out = new Float32Array(w * h);
+  for (let i = 0; i < out.length; i++) out[i] = a[i * 4] / 255;
+  return out;
+}
+function normalTex(w, h, hgt, strength) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+  const id = g.createImageData(w, h), a = id.data, H = (x, y) => hgt[((y + h) % h) * w + ((x + w) % w)];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const dx = (H(x + 1, y) - H(x - 1, y)) * strength, dy = (H(x, y + 1) - H(x, y - 1)) * strength, inv = 1 / Math.sqrt(dx * dx + dy * dy + 1), i = (y * w + x) * 4;
+    a[i] = (-dx * inv * .5 + .5) * 255; a[i + 1] = (dy * inv * .5 + .5) * 255; a[i + 2] = (inv * .5 + .5) * 255; a[i + 3] = 255;
+  }
+  g.putImageData(id, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.anisotropy = MAX_ANISO; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+}
 function subGeo(geo, groupIds) {
   const src = geo.index.array, idx = [];
   for (const gi of groupIds) { const gr = geo.groups[gi]; for (let k = gr.start; k < gr.start + gr.count; k++) idx.push(src[k]); }
@@ -788,7 +806,16 @@ const roadRough = canvasTex(ROAD_PX, ROAD_PX, (g, w, h) => {
   g.fillStyle = 'rgb(0,178,0)'; g.fillRect(0, 0, w, h);
   paintRoadLines(g, 'rgb(0,150,0)', 'rgb(0,178,0)');
 }, { srgb: false });
-const roadMat = new THREE.MeshStandardMaterial({ map: roadMap, emissiveMap: roadEmit, emissive: '#6ff5e6', emissiveIntensity: .38, roughnessMap: roadRough, roughness: .82, metalness: .06 });
+// asphalt grain: a field of small raised stones and a few hairline cracks, repeated finely across each tile
+const roadNormal = normalTex(512, 512, heightField(512, 512, (g, w, h) => {
+  g.fillStyle = '#7a7a7a'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 9000; i++) { const v = rand(95, 190) | 0; g.fillStyle = `rgb(${v},${v},${v})`; g.beginPath(); g.arc(rand(0, w), rand(0, h), rand(.7, 2.3), 0, 7); g.fill(); }
+  g.strokeStyle = '#3a3a3a'; g.lineWidth = 1.3;
+  for (let i = 0; i < 5; i++) { let x = rand(40, w - 40), y = rand(40, h - 40); g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 9; k++) { x += rand(-12, 12); y += rand(-12, 12); g.lineTo(x, y); } g.stroke(); }
+}), .9);
+roadNormal.repeat.set(3, 3 * TILE / ROAD_W);
+const roadMat = new THREE.MeshStandardMaterial({ map: roadMap, emissiveMap: roadEmit, emissive: '#6ff5e6', emissiveIntensity: .38, roughnessMap: roadRough, roughness: .82, metalness: .06,
+  normalMap: LOW_GPU ? null : roadNormal, normalScale: new THREE.Vector2(.5, .5) });   // the grain is skipped on weak chips: the road fills most of the screen
 const concreteMat = new THREE.MeshStandardMaterial({ color: '#2d2344', roughness: .9, metalness: .05 });
 const metalMat = new THREE.MeshStandardMaterial({ color: '#2c2640', roughness: .38, metalness: .8 });
 const coralGlow = new THREE.MeshStandardMaterial({ color: '#ff6a3d', emissive: '#ff5a2a', emissiveIntensity: 5 });
@@ -1414,19 +1441,39 @@ function shockwave(x, y, z) {
 /* =====================================================================
    Obstacles, coins, power-ups
    ===================================================================== */
-const hazardTex = canvasTex(256, 64, (g, w, h) => {
-  g.fillStyle = '#1b1328'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffb020';
-  for (let x = -h; x < w + h; x += 48) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 24, 0); g.lineTo(x + 24 - h, h); g.lineTo(x - h, h); g.closePath(); g.fill(); }
-  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, h - 6, w, 6); g.fillRect(0, 0, w, 4);
+/* Obstacles are colour-coded by what you do: red and white = jump over it, yellow and black = slide under
+   it. Each has a glowing bar on the edge you clear and matching arrows painted on the road in front. */
+const scuff = (g, w, h, n) => { for (let i = 0; i < n; i++) { g.fillStyle = `rgba(30,18,28,${rand(.05, .22)})`; g.fillRect(rand(0, w), rand(0, h), rand(2, 14), rand(1, 2)); } };
+const hazardTex = canvasTex(512, 128, (g, w, h) => {
+  g.fillStyle = '#f3efe8'; g.fillRect(0, 0, w, h); g.fillStyle = '#e3182c';
+  for (let x = -h; x < w + h; x += 96) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 48, 0); g.lineTo(x + 48 - h, h); g.lineTo(x - h, h); g.closePath(); g.fill(); }
+  scuff(g, w, h, 320);
+  g.fillStyle = '#1b1328'; g.fillRect(0, 0, w, 9); g.fillRect(0, h - 9, w, 9);
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(0, 9, w, 2);
 });
-const hazardMat = new THREE.MeshStandardMaterial({ map: hazardTex, emissiveMap: hazardTex, emissive: '#ff9a2a', emissiveIntensity: .55, roughness: .5, metalness: .2 });
-const chevTex = canvasTex(256, 96, (g, w, h) => {
-  g.fillStyle = '#1b1328'; g.fillRect(0, 0, w, h);
-  g.strokeStyle = '#53f0de'; g.lineWidth = 10; g.lineJoin = 'round'; g.lineCap = 'round';
-  for (let x = 32; x < w; x += 64) { g.beginPath(); g.moveTo(x - 18, h * .3); g.lineTo(x, h * .64); g.lineTo(x + 18, h * .3); g.stroke(); }
-  g.fillStyle = '#53f0de'; g.fillRect(0, 0, w, 5); g.fillRect(0, h - 5, w, 5);
+const hazardMat = new THREE.MeshStandardMaterial({ map: hazardTex, emissiveMap: hazardTex, emissive: '#ffffff', emissiveIntensity: .3, roughness: .45, metalness: .1 });
+const redGlow = new THREE.MeshStandardMaterial({ color: '#ff3346', emissive: '#ff1f36', emissiveIntensity: 5 });
+const chevTex = canvasTex(512, 192, (g, w, h) => {
+  g.fillStyle = '#16121f'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffcf1f';
+  for (let x = -h; x < w + h; x += 84) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 42, 0); g.lineTo(x + 42 - h, h); g.lineTo(x - h, h); g.closePath(); g.fill(); }
+  g.fillStyle = '#16121f'; g.beginPath(); g.roundRect(w * .27, 20, w * .46, h - 40, 16); g.fill();
+  g.strokeStyle = '#ffd83a'; g.lineWidth = 15; g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const x of [w * .4, w * .6]) { g.beginPath(); g.moveTo(x - 26, h * .36); g.lineTo(x, h * .62); g.lineTo(x + 26, h * .36); g.stroke(); }
+  scuff(g, w, h, 260);
+  g.fillStyle = '#0d0a14'; g.fillRect(0, 0, w, 8); g.fillRect(0, h - 8, w, 8);
 });
-const gateMat = new THREE.MeshStandardMaterial({ map: chevTex, emissiveMap: chevTex, emissive: '#ffffff', emissiveIntensity: 1.6, roughness: .5 });
+const gateMat = new THREE.MeshStandardMaterial({ map: chevTex, emissiveMap: chevTex, emissive: '#ffffff', emissiveIntensity: .75, roughness: .45 });
+const yellowGlow = new THREE.MeshStandardMaterial({ color: '#ffd21f', emissive: '#ffc400', emissiveIntensity: 5 });
+// road arrows in front of each obstacle: up chevrons (jump) or down chevrons (slide)
+function warnMat(color, down) {
+  const map = canvasTex(128, 192, (g, w, h) => {
+    g.strokeStyle = '#fff'; g.lineWidth = 14; g.lineCap = 'round'; g.lineJoin = 'round';
+    for (const y of [.3, .66]) { const a = h * (y + (down ? -.1 : .1)), b = h * (y + (down ? .1 : -.1)); g.beginPath(); g.moveTo(w * .18, a); g.lineTo(w * .5, b); g.lineTo(w * .82, a); g.stroke(); }
+  }, { repeat: false });
+  return new THREE.MeshBasicMaterial({ map, color: new THREE.Color(color).multiplyScalar(1.8), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+}
+const warnGeo = new THREE.PlaneGeometry(1.3, 1.95).rotateX(-Math.PI / 2).translate(0, .02, 2.1);
+const warnJump = warnMat('#ff2a3c', false), warnSlide = warnMat('#ffc81f', true);
 const rampTex = canvasTex(128, 128, (g, w, h) => {
   g.fillStyle = '#2a2440'; g.fillRect(0, 0, w, h);
   g.fillStyle = 'rgba(0,0,0,.35)'; for (let y = 0; y < h; y += 8) g.fillRect(0, y, w, 2);
@@ -1440,17 +1487,52 @@ const rampEmit = canvasTex(128, 128, (g, w, h) => {
 });
 const rampMat = new THREE.MeshStandardMaterial({ map: rampTex, emissiveMap: rampEmit, emissive: '#ffffff', emissiveIntensity: 1.8, roughness: .5, metalness: .5 });
 
+/* Freight pods stay out of the red/yellow warning colours, and have glowing roof and nose edges so their
+   shape reads from far away. Textures are drawn at 2x with panel seams, rivets, grime and a relief map. */
 const POD_COLORS = [
-  { body: '#ece6f2', stripe: '#ff6a3d' }, { body: '#2aa598', stripe: '#ffc84d' },
-  { body: '#ff7a52', stripe: '#53f0de' }, { body: '#5a44b8', stripe: '#ff5fa2' }
+  { body: '#e9e6f0', stripe: '#3fd2ff' }, { body: '#3a5ea8', stripe: '#e6f0ff' },
+  { body: '#5a44b8', stripe: '#ff5fd0' }, { body: '#2b8c84', stripe: '#e8fffb' }
 ];
+const podRelief = (() => {
+  const side = heightField(512, 256, (g, w, h) => {
+    g.scale(2, 2); w /= 2; h /= 2;
+    g.fillStyle = '#999'; g.fillRect(0, 0, w, h); g.fillStyle = '#444';
+    for (let x = 0; x < w; x += 64) g.fillRect(x, 0, 2, h);
+    g.fillRect(0, h * .52, w, 1.5); g.fillRect(0, h * .88, w, 1.5);
+    for (let x = 10; x < w; x += 64) { g.fillStyle = '#ddd'; g.fillRect(x - 2, h * .18 - 2, 48, h * .22 + 4); g.fillStyle = '#555'; g.fillRect(x, h * .18, 44, h * .22); }
+    g.fillStyle = '#eee'; for (let x = 0; x < w; x += 64) for (const y of [h * .07, h * .47, h * .57, h * .94]) { g.beginPath(); g.arc(x + 6, y, 1.2, 0, 7); g.arc(x + 58, y, 1.2, 0, 7); g.fill(); }
+  });
+  const front = heightField(512, 512, (g, w, h) => {
+    g.scale(2, 2); w /= 2; h /= 2;
+    g.fillStyle = '#999'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#ddd'; g.beginPath(); g.roundRect(24, 22, w - 48, 100, 20); g.fill();
+    g.fillStyle = '#555'; g.beginPath(); g.roundRect(28, 26, w - 56, 92, 18); g.fill();
+    for (const x of [64, w - 64]) { g.fillStyle = '#ddd'; g.beginPath(); g.arc(x, 200, 27, 0, 7); g.fill(); g.fillStyle = '#666'; g.beginPath(); g.arc(x, 200, 22, 0, 7); g.fill(); }
+    g.fillStyle = '#444'; g.fillRect(0, h * .52, w, 1.5);
+  });
+  return { side: normalTex(512, 256, side, 1.4), front: normalTex(512, 512, front, 1.4) };
+})();
 const podMats = POD_COLORS.map((c, idx) => {
   const panel = (g, w, h, emit) => {
     g.fillStyle = emit ? '#000' : c.body; g.fillRect(0, 0, w, h);
-    if (!emit) { g.fillStyle = 'rgba(0,0,0,.2)'; for (let x = 0; x < w; x += 64) g.fillRect(x, 0, 3, h); }
-    for (let x = 10; x < w; x += 64) { g.fillStyle = emit ? '#3b2a1c' : '#161229'; g.fillRect(x, h * .18, 44, h * .22); if (!emit) { g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(x + 4, h * .19, 12, h * .05); } }
-    g.fillStyle = emit ? c.stripe : c.stripe; g.fillRect(0, h * .6, w, h * .09);
-    if (!emit) { const gr = g.createLinearGradient(0, h * .75, 0, h); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.35)'); g.fillStyle = gr; g.fillRect(0, h * .75, w, h * .25); }
+    if (!emit) {
+      for (let i = 0; i < 50; i++) { g.fillStyle = `rgba(20,16,30,${rand(.03, .09)})`; g.fillRect(rand(0, w), h * rand(.3, .6), rand(1, 3), h * rand(.15, .5)); }
+      g.fillStyle = 'rgba(0,0,0,.26)'; for (let x = 0; x < w; x += 64) g.fillRect(x, 0, 2, h);
+      g.fillRect(0, h * .52, w, 1.5); g.fillRect(0, h * .88, w, 1.5);
+      g.fillStyle = 'rgba(255,255,255,.3)'; for (let x = 0; x < w; x += 64) for (const y of [h * .07, h * .47, h * .57, h * .94]) { g.beginPath(); g.arc(x + 6, y, 1.2, 0, 7); g.arc(x + 58, y, 1.2, 0, 7); g.fill(); }
+    }
+    for (let x = 10; x < w; x += 64) {
+      if (emit) { g.fillStyle = '#3b2a1c'; g.fillRect(x, h * .18, 44, h * .22); continue; }
+      const gr = g.createLinearGradient(0, h * .18, 0, h * .4); gr.addColorStop(0, '#232b44'); gr.addColorStop(1, '#0e0c1c');
+      g.fillStyle = gr; g.fillRect(x, h * .18, 44, h * .22);
+      g.fillStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.moveTo(x + 4, h * .4); g.lineTo(x + 16, h * .18); g.lineTo(x + 22, h * .18); g.lineTo(x + 10, h * .4); g.fill();
+    }
+    g.fillStyle = c.stripe; g.fillRect(0, h * .6, w, h * .09);
+    if (!emit) {
+      g.fillStyle = 'rgba(255,255,255,.6)'; g.font = '600 7px "Chakra Petch", system-ui, sans-serif'; g.textBaseline = 'middle';
+      for (let x = 0; x < w; x += 128) g.fillText('H9 FREIGHT · 0' + (idx + 3), x + 10, h * .78);
+      const gr = g.createLinearGradient(0, h * .75, 0, h); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.38)'); g.fillStyle = gr; g.fillRect(0, h * .75, w, h * .25);
+    }
   };
   const front = (g, w, h, emit) => {
     g.fillStyle = emit ? '#000' : c.body; g.fillRect(0, 0, w, h);
@@ -1459,14 +1541,17 @@ const podMats = POD_COLORS.map((c, idx) => {
     g.fillStyle = c.stripe; g.fillRect(0, h * .6, w, h * .09);
     for (const x of [64, w - 64]) { g.fillStyle = emit ? '#fff4d8' : '#fffbe9'; g.beginPath(); g.arc(x, 200, 22, 0, 7); g.fill(); }
     g.fillStyle = emit ? '#000' : '#141026'; g.fillRect(w / 2 - 34, 186, 68, 26);
-    g.fillStyle = emit ? '#ffc84d' : '#ffc84d'; g.font = '700 20px "Chakra Petch", system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('H9-0' + (idx + 3), w / 2, 200);
+    g.fillStyle = '#9ff3ff'; g.font = '700 20px "Chakra Petch", system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('H9-0' + (idx + 3), w / 2, 200);
+    if (!emit) { const gr = g.createLinearGradient(0, h * .8, 0, h); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.35)'); g.fillStyle = gr; g.fillRect(0, h * .8, w, h * .2); }
   };
-  const std = (map, emi) => new THREE.MeshStandardMaterial({ map, emissiveMap: emi, emissive: '#ffffff', emissiveIntensity: 2.2, roughness: .35, metalness: .3 });
-  const side = std(canvasTex(256, 128, (g, w, h) => panel(g, w, h, false)), canvasTex(256, 128, (g, w, h) => panel(g, w, h, true)));
-  const fr = std(canvasTex(256, 256, (g, w, h) => front(g, w, h, false), { repeat: false }), canvasTex(256, 256, (g, w, h) => front(g, w, h, true), { repeat: false }));
+  const x2 = (w, h, draw, opts) => canvasTex(w, h, (g, W, H) => { g.scale(2, 2); draw(g, W / 2, H / 2); }, opts);
+  const std = (map, emi, normalMap) => new THREE.MeshStandardMaterial({ map, emissiveMap: emi, emissive: '#ffffff', emissiveIntensity: 2.2, roughness: .35, metalness: .3, normalMap, normalScale: new THREE.Vector2(.8, .8) });
+  const side = std(x2(512, 256, (g, w, h) => panel(g, w, h, false)), x2(512, 256, (g, w, h) => panel(g, w, h, true)), podRelief.side);
+  const fr = std(x2(512, 512, (g, w, h) => front(g, w, h, false), { repeat: false }), x2(512, 512, (g, w, h) => front(g, w, h, true), { repeat: false }), podRelief.front);
   const top = new THREE.MeshStandardMaterial({ color: new THREE.Color(c.body).multiplyScalar(.55), roughness: .6, metalness: .35 });
   return [side, side, top, top, fr, fr];
 });
+const podEdgeGlow = new THREE.MeshStandardMaterial({ color: '#b8ecff', emissive: '#8fe6ff', emissiveIntensity: 1.1 });
 
 const postGeo = new THREE.BoxGeometry(.12, 1, .12).translate(0, .5, 0);
 const footGeo = new THREE.BoxGeometry(.14, .05, .6);
@@ -1482,20 +1567,22 @@ const HURDLE_GEO = mergeGeometries([
   mergeGeometries([-1, 1].flatMap(sd => [postGeo.clone().translate(sd * (HURDLE_W / 2 - .05), 0, 0), footGeo.clone().translate(sd * (HURDLE_W / 2 - .05), .025, 0)])),
   tubeGeo.clone().translate(0, .97, 0)
 ], true);
-const HURDLE_MATS = [hazardMat, metalMat, coralGlow];
+const HURDLE_MATS = [hazardMat, metalMat, redGlow];
 function makeHurdle() {
   const m = new THREE.Mesh(HURDLE_GEO, HURDLE_MATS); m.castShadow = true;
-  return { mesh: m, kind: 'hurdle', w: HURDLE_W, h: 1.0, len: .4 };
+  const warn = new THREE.Mesh(warnGeo, warnJump); m.add(warn);
+  return { mesh: m, warn, kind: 'hurdle', w: HURDLE_W, h: 1.0, len: .4 };
 }
 const GATE_GEO = mergeGeometries([
   mergeGeometries([gatePostGeo.clone().translate(-HURDLE_W / 2, 0, 0), gatePostGeo.clone().translate(HURDLE_W / 2, 0, 0), gateBeamGeo.clone().translate(0, 3.35, 0)]),
   gateBoardGeo.clone().translate(0, 1.95, 0),
   tubeGeo.clone().translate(0, 1.4, 0)
 ], true);
-const GATE_MATS = [metalMat, gateMat, tealGlow];
+const GATE_MATS = [metalMat, gateMat, yellowGlow];
 function makeGate() {
   const m = new THREE.Mesh(GATE_GEO, GATE_MATS); m.castShadow = true;
-  return { mesh: m, kind: 'gate', w: HURDLE_W, h: 3.4, y0: 1.28, len: .4 };
+  const warn = new THREE.Mesh(warnGeo, warnSlide); m.add(warn);
+  return { mesh: m, warn, kind: 'gate', w: HURDLE_W, h: 3.4, y0: 1.28, len: .4 };
 }
 const podGeos = {};
 function podGeo(L) {
@@ -1504,12 +1591,17 @@ function podGeo(L) {
     podGeos[L] = mergeGeometries([
       subGeo(box, [0, 1]), subGeo(box, [2, 3]), subGeo(box, [4, 5]),
       new THREE.BoxGeometry(POD_W - .4, .3, L - .6).translate(0, .15, 0),
-      mergeGeometries([-1, 1].map(sd => new THREE.BoxGeometry(.05, .06, L - .9).translate(sd * (POD_W - .4) / 2, .1, 0)))
+      mergeGeometries([-1, 1].map(sd => new THREE.BoxGeometry(.05, .06, L - .9).translate(sd * (POD_W - .4) / 2, .1, 0))),
+      mergeGeometries([                                                         // roof and nose edge lights
+        ...[-1, 1].map(sd => new THREE.BoxGeometry(.05, .05, L - .1).translate(sd * (POD_W / 2 - .02), BLOCK_H + .005, 0)),
+        ...[-1, 1].map(sd => new THREE.BoxGeometry(POD_W - .1, .05, .05).translate(0, BLOCK_H + .005, sd * (L / 2 - .02))),
+        ...[-1, 1].map(sd => new THREE.BoxGeometry(.05, BLOCK_H - .5, .05).translate(sd * (POD_W / 2 - .02), .3 + (BLOCK_H - .5) / 2, L / 2 - .02))
+      ])
     ], true);
   }
   return podGeos[L];
 }
-const podMatSets = podMats.map(m => [m[0], m[2], m[4], metalMat, tealGlow]);
+const podMatSets = podMats.map(m => [m[0], m[2], m[4], metalMat, tealGlow, podEdgeGlow]);
 podMatSets.forEach(set => set.forEach(bendMaterial));   // every colour variant follows the curved world
 function makeBlock(L) {
   const m = new THREE.Mesh(podGeo(L), podMatSets[0]); m.castShadow = m.receiveShadow = true;
@@ -1626,6 +1718,7 @@ function spawnObstacle(kind, lane, d, L) {
   else if (kind === 'ramp') o = acquire('ramp', makeRamp);
   else { o = acquire('block' + L, () => makeBlock(L)); o.mesh.material = pick(podMatSets); }
   o.lane = lane; o.x = lane * LANE_W; o.d = d; o.passed = false; o.broken = false; o.roofed = false; o.fly = null;
+  if (o.warn) o.warn.visible = true;
   o.mesh.rotation.set(0, 0, 0); o.mesh.position.set(o.x, 0, G.D - d);
   G.obstacles.push(o); return o;
 }
@@ -1997,7 +2090,7 @@ function die(o) {
   sound.crash(); sound.stopMusic(); sound.stopWind(); vibrate([80, 40, 120]);
   sparks(P.x, P.y + 1, P.z - .4, 70, 1.2);
   radial(P.x, P.y + 1, P.z - .4, 30, 6, .8, .3, 1.8, .7, .5, 10);
-  if (o.kind === 'hurdle' || o.kind === 'gate') o.fly = { y: 0, z: 0, vy: 7, vz: -5, rx: 0, vr: -7 };
+  if (o.kind === 'hurdle' || o.kind === 'gate') { o.fly = { y: 0, z: 0, vy: 7, vz: -5, rx: 0, vr: -7 }; o.warn.visible = false; }
   if (o.kind === 'edge') { P.fell = true; P.vy = 3; P.vz = 4; }
   P.wall = 0; sound.stopScrape(); endTutorial(); G.timeScaleTarget = .3;
   loseChain();
