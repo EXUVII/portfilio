@@ -275,9 +275,9 @@ const TILE = 8, TILE_N = 68, WALL_FACE = HALF_ROAD + .25, WR_X = WALL_FACE - .78
 
 /* Places come in order on every run and then loop. Reaching one for the first time saves it and can unlock an ability. */
 const ZONES = [
-  { key: 'highway', name: 'Highway 9', sub: 'Elevated highway at dusk', len: 900, fog: '#7a3563', night: 0, pools: .22, hemi: 1.15, sunI: 2.7, bx: .0006, by: .00018 },
-  { key: 'canyon', name: 'Downtown Canyon', sub: 'Neon canyon after dark', len: 1100, fog: '#2a1f5e', night: 1, pools: 0, hemi: .8, sunI: 1.1, bx: .0009, by: .00012, unlock: 'wallrun' },
-  { key: 'skyway', name: 'Broken Skyway', sub: 'Collapsed overpass under repair', len: 1200, fog: '#8c4a42', night: .25, pools: .12, hemi: 1.0, sunI: 2.3, bx: .0008, by: .00026, unlock: 'walljump' }
+  { key: 'highway', name: 'Highway 9', sub: 'Elevated highway at dusk', len: 900, fog: '#40578a', night: 0, pools: .22, hemi: 1.15, sunI: 2.7, bx: .0006, by: .00018 },
+  { key: 'canyon', name: 'Downtown Canyon', sub: 'Neon canyon after dark', len: 1100, fog: '#1c2a5c', night: 1, pools: 0, hemi: .8, sunI: 1.1, bx: .0009, by: .00012, unlock: 'wallrun' },
+  { key: 'skyway', name: 'Broken Skyway', sub: 'Collapsed overpass under repair', len: 1200, fog: '#5b6a93', night: .25, pools: .12, hemi: 1.0, sunI: 2.3, bx: .0008, by: .00026, unlock: 'walljump' }
 ];
 const ZONE_CYCLE = ZONES.reduce((a, z) => a + z.len, 0);
 const UNLOCK_AT = { wallrun: ZONES[0].len, walljump: ZONES[0].len + ZONES[1].len };
@@ -573,7 +573,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const MAX_ANISO = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 
 const scene = new THREE.Scene();
-const FOG = new THREE.Color('#7a3563');
+const FOG = new THREE.Color('#40578a');
 scene.fog = new THREE.Fog(FOG, 18, 135);
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, .1, 1400);
 
@@ -672,20 +672,20 @@ const skyMat = new THREE.ShaderMaterial({
       vec3 sd = normalize(vec3(0., .06, -1.));
       float az = max(dot(normalize(d.xz + 1e-5), normalize(sd.xz)), 0.);
       float sdot = max(dot(d, sd), 0.);
-      vec3 top = vec3(.010, .007, .04), mid = vec3(.12, .028, .16), warm = vec3(1., .32, .12);
-      vec3 hor = mix(uFog * 1.15, warm, pow(az, 3.) * .85);
+      vec3 top = vec3(.004, .010, .045), mid = vec3(.03, .07, .2), warm = vec3(1., .45, .22), blue = vec3(.22, .38, .72);
+      vec3 hor = mix(mix(uFog * 1.15, blue, .55), warm, pow(az, 8.) * .6);   // blue horizon, warm only near the sun
       vec3 col = mix(uFog, hor, smoothstep(-.005, .05, h));
       col = mix(col, mid, smoothstep(.05, .26, h));
       col = mix(col, top, smoothstep(.2, .65, h));
       float disk = smoothstep(.9982, .9989, sdot);
       vec3 sunC = mix(vec3(1., .26, .3), vec3(1., .78, .42), smoothstep(-.01, .1, h));
       col += sunC * disk * 1.9 * uSun * (1. - uNight);
-      col += (vec3(1., .42, .2) * pow(sdot, 60.) * .7 + vec3(1., .25, .35) * pow(sdot, 8.) * .25) * uSun * (1. - uNight);
+      col += (vec3(1., .42, .2) * pow(sdot, 60.) * .7 + vec3(1., .45, .3) * pow(sdot, 14.) * .16) * uSun * (1. - uNight);
       if (h > 0. && h < .5){
         vec2 cp = d.xz / (h + .12) * 1.4; cp.x += uTime * .012;
         float c = fbm(cp); c = smoothstep(.52, .86, c) * smoothstep(0., .06, h) * (1. - smoothstep(.22, .5, h));
-        vec3 cc = mix(vec3(1., .45, .35) * (.45 + pow(az, 2.) * 1.2), vec3(.22, .07, .28), smoothstep(.03, .3, h));
-        col = mix(col, cc + vec3(1., .5, .3) * pow(sdot, 6.) * .8, c * .8);
+        vec3 cc = mix(vec3(.55, .63, .86) * (.5 + pow(az, 4.) * .5) + vec3(1., .5, .3) * pow(az, 8.) * .45, vec3(.07, .11, .27), smoothstep(.03, .3, h));
+        col = mix(col, cc + vec3(1., .55, .35) * pow(sdot, 6.) * .55, c * .7);
       }
       vec3 nightC = mix(uFog * 1.35, vec3(.02, .018, .07), smoothstep(0., .32, h));
       col = mix(col, mix(uFog, nightC, smoothstep(-.005, .05, h)), uNight);
@@ -707,7 +707,7 @@ scene.environment = pmrem.fromScene(envScene, .02, .1, 200).texture;
 scene.environmentIntensity = .6;
 
 /* ----- lights ----- */
-const hemiLight = new THREE.HemisphereLight('#a17fe0', '#2a1530', 1.15); scene.add(hemiLight);
+const hemiLight = new THREE.HemisphereLight('#8ea8e6', '#1a1e33', 1.15); scene.add(hemiLight);
 const sunLight = new THREE.DirectionalLight('#ffb48c', 2.7);
 sunLight.position.set(-7, 15, 11); sunLight.target.position.set(0, 0, -6);
 sunLight.castShadow = true;
@@ -937,13 +937,17 @@ const signMats = SIGN_WORDS.map((word, i) => {
 });
 /* The whole city is merged into one mesh per material and drawn as two copies that leapfrog each other,
    so 64 buildings cost about a dozen draw calls. Far buildings sink into the haze in the vertex shader. */
+const CITY_BEHIND = { value: 1e5 };   // world z past which city blocks sink away (off in the menu, which looks back)
 function cityMaterial(m) {
   m.userData.bent = true;
   m.onBeforeCompile = sh => {
-    sh.uniforms.uBend = BEND; sh.uniforms.uBendStart = BEND_START;
-    sh.vertexShader = 'attribute float aSink; uniform vec2 uBend; uniform float uBendStart;\n' + sh.vertexShader
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\n{ float wz = (modelMatrix * vec4(transformed, 1.)).z; transformed.y -= aSink * (1. - smoothstep(-400., -240., wz)); }')
-      .replace('#include <project_vertex>', '#include <project_vertex>\n{ vec4 mv = mvPosition; ' + BEND_GLSL + ' mvPosition = mv; gl_Position = projectionMatrix * mvPosition; }');
+    sh.uniforms.uBend = BEND; sh.uniforms.uBendStart = BEND_START; sh.uniforms.uBehind = CITY_BEHIND;
+    sh.vertexShader = 'attribute float aSink; uniform vec2 uBend; uniform float uBendStart, uBehind; varying float vCamDist;\n' + sh.vertexShader
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n{ float wz = (modelMatrix * vec4(transformed, 1.)).z; transformed.y -= aSink * max(1. - smoothstep(-400., -240., wz), smoothstep(uBehind, uBehind + 25., wz)); }')
+      .replace('#include <project_vertex>', '#include <project_vertex>\n{ vec4 mv = mvPosition; ' + BEND_GLSL + ' mvPosition = mv; gl_Position = projectionMatrix * mvPosition; vCamDist = -mvPosition.z; }');
+    // Far buildings read as silhouettes: their window lights fade out with distance, so detail stays near the runner.
+    sh.fragmentShader = 'varying float vCamDist;\n' + sh.fragmentShader
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1. - .8 * smoothstep(100., 200., vCamDist);');
   };
   m.customProgramCacheKey = () => 'city';
 }
@@ -992,7 +996,7 @@ function skylineTex(base, litP, maxH) {
     }
   }, { repeat: false });
 }
-[[-560, 2400, 300, 30, '#4a2150', .05, .55], [-470, 2000, 240, 16, '#2d163f', .09, .5], [560, 2400, 300, 30, '#40204d', .05, .5]].forEach(([z, w, h, y, col, lit, mh]) => {
+[[-560, 2400, 300, 30, '#2a3a60', .02, .55], [-470, 2000, 240, 16, '#1c2746', .035, .5], [560, 2400, 300, 30, '#26345a', .02, .5]].forEach(([z, w, h, y, col, lit, mh]) => {
   const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: skylineTex(col, lit, mh), transparent: true, fog: false, depthWrite: false }));
   p.material.userData.noBend = true;
   p.position.set(0, y, z); if (z > 0) p.rotation.y = Math.PI; p.renderOrder = -5; scene.add(p);
@@ -1047,7 +1051,7 @@ function placeEdge(g, dd, dir, e) {
 function updateTiles(dD) {
   const menu = G.state === 'menu';
   for (let i = 0; i < TILE_N; i++) {
-    tileZ[i] += dD; if (tileZ[i] > NEAR_EDGE + 4) tileZ[i] -= TILE_N * TILE;
+    tileZ[i] += dD; if (tileZ[i] > behindEdge() + 4) tileZ[i] -= TILE_N * TILE;
     const z = tileZ[i], d = G.D - z, gap = !menu && !!gapAt(d), ti = Math.round(d / TILE);
     setInst(roadTiles, i, !gap, 0, 0, z); setInst(slabTiles, i, !gap, 0, 0, z);
     const crack = !gap && !menu && (nearGap(d) || (zoneKeyAt(d) === 'skyway' && hash1(ti) < .3));
@@ -1881,11 +1885,13 @@ function updateSpeed(dt) {
   else G.speed = damp(G.speed, 0, 3.5, dt);
 }
 
+const behindEdge = () => G.state === 'menu' ? NEAR_EDGE : 24;
 function updateScenery(dt, dD) {
+  CITY_BEHIND.value = G.state === 'menu' ? 1e5 : 40;
   updateTiles(dD);
-  for (let i = 0; i < LAMP_N; i++) { lampZ[i] += dD; if (lampZ[i] > NEAR_EDGE) lampZ[i] -= SPAN; }
+  for (let i = 0; i < LAMP_N; i++) { lampZ[i] += dD; if (lampZ[i] > behindEdge()) lampZ[i] -= SPAN; }
   placeLamps(true);
-  for (let i = 0; i < PILLAR_N; i++) { pillarZ[i] += dD; if (pillarZ[i] > NEAR_EDGE) pillarZ[i] -= SPAN; }
+  for (let i = 0; i < PILLAR_N; i++) { pillarZ[i] += dD; if (pillarZ[i] > behindEdge()) pillarZ[i] -= SPAN; }
   placePillars();
   cityZ += dD; if (cityZ > SPAN) cityZ -= SPAN;
   placeCity();
@@ -2196,7 +2202,7 @@ function camTargets() {
   } else if (P.fell && (G.state === 'dead' || G.state === 'over')) {
     tp.set(P.x * .6, 3.4, P.z + 6.2); tl.set(P.x, Math.max(P.y, -14) - 1, P.z - 3);
   } else if (G.state === 'over') {
-    const a = G.rtime * .15;
+    const a = Math.sin(G.rtime * .25) * 1.15;
     tp.set(P.x + Math.sin(a) * 5.5, 5.2, P.z + Math.cos(a) * 5.5); tl.set(P.x, .4, P.z);
   } else if (G.state === 'dead') {
     tp.set(P.x * .7 + 1.8, 3.1, P.z + 6.8 + (portrait ? 2 : 0)); tl.set(P.x, P.y + .6, P.z);
@@ -2233,7 +2239,7 @@ function updateCamera(rdt) {
   camera.fov = damp(camera.fov, fovT, 5, rdt); camera.updateProjectionMatrix();
   sky.position.copy(camera.position);
   G.fogK = damp(G.fogK, G.state === 'menu' ? 0 : 1, 1.5, rdt);
-  scene.fog.near = lerp(18, 50, G.fogK); scene.fog.far = lerp(135, 235, G.fogK);
+  scene.fog.near = lerp(18, 40, G.fogK); scene.fog.far = lerp(135, 215, G.fogK);
 }
 
 /* ----- the look of each place blends in over a few seconds ----- */
