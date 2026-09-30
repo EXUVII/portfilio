@@ -275,9 +275,9 @@ const TILE = 8, TILE_N = 68, WALL_FACE = HALF_ROAD + .25, WR_X = WALL_FACE - .78
 
 /* Places come in order on every run and then loop. Reaching one for the first time saves it and can unlock an ability. */
 const ZONES = [
-  { key: 'highway', name: 'Highway 9', sub: 'Elevated highway at dusk', len: 900, fog: '#7a3563', night: 0, pools: .32, hemi: 1.15, sunI: 2.7, bx: .0006, by: .00018 },
+  { key: 'highway', name: 'Highway 9', sub: 'Elevated highway at dusk', len: 900, fog: '#7a3563', night: 0, pools: .22, hemi: 1.15, sunI: 2.7, bx: .0006, by: .00018 },
   { key: 'canyon', name: 'Downtown Canyon', sub: 'Neon canyon after dark', len: 1100, fog: '#2a1f5e', night: 1, pools: 0, hemi: .8, sunI: 1.1, bx: .0009, by: .00012, unlock: 'wallrun' },
-  { key: 'skyway', name: 'Broken Skyway', sub: 'Collapsed overpass under repair', len: 1200, fog: '#8c4a42', night: .25, pools: .18, hemi: 1.0, sunI: 2.3, bx: .0008, by: .00026, unlock: 'walljump' }
+  { key: 'skyway', name: 'Broken Skyway', sub: 'Collapsed overpass under repair', len: 1200, fog: '#8c4a42', night: .25, pools: .12, hemi: 1.0, sunI: 2.3, bx: .0008, by: .00026, unlock: 'walljump' }
 ];
 const ZONE_CYCLE = ZONES.reduce((a, z) => a + z.len, 0);
 const UNLOCK_AT = { wallrun: ZONES[0].len, walljump: ZONES[0].len + ZONES[1].len };
@@ -599,7 +599,7 @@ const composer = new EffectComposer(renderer, rt);
 composer.setPixelRatio(DPR);
 composer.setSize(innerWidth, innerHeight);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .55, .5, .95);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .38, .45, 1.05);
 // The glow is a wide blur, so it is computed at half the usual internal resolution; it looks the same.
 const bloomSetSize = bloom.setSize.bind(bloom);
 bloom.setSize = (w, h) => bloomSetSize(Math.max(2, Math.round(w * .5)), Math.max(2, Math.round(h * .5)));
@@ -614,7 +614,7 @@ const finalPass = new ShaderPass({
     vec3 ssAces(vec3 c){
       const mat3 I = mat3(vec3(.59719, .07600, .02840), vec3(.35458, .90834, .13383), vec3(.04823, .01566, .83777));
       const mat3 O = mat3(vec3(1.60475, -.10208, -.00327), vec3(-.53108, 1.10813, -.07276), vec3(-.07367, -.00605, 1.07602));
-      return clamp(O * ssRRTFit(I * (c / .6)), 0., 1.);
+      return clamp(O * ssRRTFit(I * (c * .88 / .6)), 0., 1.);
     }
     vec3 ssSRGB(vec3 c){ return mix(pow(c, vec3(.41666)) * 1.055 - .055, c * 12.92, vec3(lessThanEqual(c, vec3(.0031308)))); }
     void main(){
@@ -676,7 +676,7 @@ const skyMat = new THREE.ShaderMaterial({
       col = mix(col, top, smoothstep(.2, .65, h));
       float disk = smoothstep(.9982, .9989, sdot);
       vec3 sunC = mix(vec3(1., .26, .3), vec3(1., .78, .42), smoothstep(-.01, .1, h));
-      col += sunC * disk * 2.4 * uSun * (1. - uNight);
+      col += sunC * disk * 1.9 * uSun * (1. - uNight);
       col += (vec3(1., .42, .2) * pow(sdot, 60.) * .7 + vec3(1., .25, .35) * pow(sdot, 8.) * .25) * uSun * (1. - uNight);
       if (h > 0. && h < .5){
         vec2 cp = d.xz / (h + .12) * 1.4; cp.x += uTime * .012;
@@ -734,12 +734,12 @@ const roadMap = canvasTex(512, 512, (g, w, h) => {
   drawRoadLines(g, w, h, 'rgba(255,240,220,.85)');
 });
 const roadEmit = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); drawRoadLines(g, w, h, '#fff'); });
-const roadMat = new THREE.MeshStandardMaterial({ map: roadMap, emissiveMap: roadEmit, emissive: '#6ff5e6', emissiveIntensity: .55, roughness: .58, metalness: .08 });
+const roadMat = new THREE.MeshStandardMaterial({ map: roadMap, emissiveMap: roadEmit, emissive: '#6ff5e6', emissiveIntensity: .38, roughness: .58, metalness: .08 });
 const concreteMat = new THREE.MeshStandardMaterial({ color: '#2d2344', roughness: .9, metalness: .05 });
 const metalMat = new THREE.MeshStandardMaterial({ color: '#2c2640', roughness: .38, metalness: .8 });
 const coralGlow = new THREE.MeshStandardMaterial({ color: '#ff6a3d', emissive: '#ff5a2a', emissiveIntensity: 5 });
 const tealGlow = new THREE.MeshStandardMaterial({ color: '#53f0de', emissive: '#3fe8d6', emissiveIntensity: 5 });
-const railGlow = new THREE.MeshStandardMaterial({ color: '#ff6a3d', emissive: '#ff5a2a', emissiveIntensity: 2 });
+const railGlow = new THREE.MeshStandardMaterial({ color: '#ff6a3d', emissive: '#ff5a2a', emissiveIntensity: 1.4 });
 
 /* The deck is built from 8 m tiles that move with the world, so any stretch can collapse, crack or grow walls. */
 const tileZ = new Float32Array(TILE_N);
@@ -781,7 +781,7 @@ const poleGeo = mergeGeometries([
 ]);
 const lampPoles = new THREE.InstancedMesh(poleGeo, metalMat, LAMP_N);
 const lampHeads = new THREE.InstancedMesh(new THREE.BoxGeometry(.7, .12, .32).translate(1.45, 6.86, 0),
-  new THREE.MeshStandardMaterial({ color: '#ffe2b8', emissive: '#ffcf96', emissiveIntensity: 7 }), LAMP_N);
+  new THREE.MeshStandardMaterial({ color: '#ffe2b8', emissive: '#ffcf96', emissiveIntensity: 4.5 }), LAMP_N);
 const radialTex = canvasTex(128, 128, (g, w, h) => {
   const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
   gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.4, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
@@ -837,7 +837,7 @@ function windowTex(litP, palette) {
   });
 }
 const buildMats = [windowTex(.35, WARM), windowTex(.22, WARM), windowTex(.3, COOL), windowTex(.45, MIXED)]
-  .map(t => new THREE.MeshStandardMaterial({ color: '#1d1532', roughness: .85, metalness: .15, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 1.5 }));
+  .map(t => new THREE.MeshStandardMaterial({ color: '#1d1532', roughness: .85, metalness: .15, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 1.05 }));
 const roofMat = new THREE.MeshStandardMaterial({ color: '#150f26', roughness: .9 });
 const beaconMat = new THREE.MeshStandardMaterial({ color: '#ff3355', emissive: '#ff2244', emissiveIntensity: 6 });
 const SIGN_WORDS = ['HOTEL', 'RAMEN', 'OPEN', '24H', 'DINER', 'ARCADE', 'KARAOKE', 'TAXI'];
@@ -917,11 +917,11 @@ function skylineTex(base, litP, maxH) {
 });
 
 /* ----- canyon facades, construction panels and broken deck edges (all instanced on the tile grid) ----- */
-const facadeMat = new THREE.MeshStandardMaterial({ color: '#1a1330', roughness: .85, metalness: .15, emissive: '#ffffff', emissiveMap: windowTex(.34, MIXED), emissiveIntensity: .95 });
+const facadeMat = new THREE.MeshStandardMaterial({ color: '#1a1330', roughness: .85, metalness: .15, emissive: '#ffffff', emissiveMap: windowTex(.34, MIXED), emissiveIntensity: .62 });
 const facadeTiles = tiled(scaleBoxUV(new THREE.BoxGeometry(1.4, 22, TILE), [[TILE / 6, 22 / 14], [TILE / 6, 22 / 14], [1, 1], [1, 1], [1, 1], [1, 1]]).translate(0, 8, 0), facadeMat, TILE_N * 2, true);
 const neonGeo = mergeGeometries([new THREE.BoxGeometry(.06, .14, TILE).translate(0, 3.4, 0), new THREE.BoxGeometry(.06, .1, TILE).translate(0, 7.4, 0)]);
-const neonL = tiled(neonGeo, new THREE.MeshStandardMaterial({ color: '#ff5fa2', emissive: '#ff4f96', emissiveIntensity: 4.5 }), TILE_N);
-const neonR = tiled(neonGeo, new THREE.MeshStandardMaterial({ color: '#53f0de', emissive: '#3fe8d6', emissiveIntensity: 4.5 }), TILE_N);
+const neonL = tiled(neonGeo, new THREE.MeshStandardMaterial({ color: '#ff5fa2', emissive: '#ff4f96', emissiveIntensity: 2.8 }), TILE_N);
+const neonR = tiled(neonGeo, new THREE.MeshStandardMaterial({ color: '#53f0de', emissive: '#3fe8d6', emissiveIntensity: 1.8 }), TILE_N);
 const panelTex = canvasTex(512, 256, (g, w, h) => {
   g.fillStyle = '#f28a1e'; g.fillRect(0, 0, w, h);
   g.fillStyle = '#1b1328';
@@ -2155,7 +2155,7 @@ function updateCamera(rdt) {
 }
 
 /* ----- the look of each place blends in over a few seconds ----- */
-const ENV = { fog: FOG.clone(), night: 0, pools: .32, hemi: 1.15, sunI: 2.7, bx: .0006, by: .00018 };
+const ENV = { fog: FOG.clone(), night: 0, pools: .22, hemi: 1.15, sunI: 2.7, bx: .0006, by: .00018 };
 const envColor = new THREE.Color(), ENV_KEYS = ['night', 'pools', 'hemi', 'sunI', 'bx', 'by'];
 function updateEnv(rdt) {
   const z = G.state === 'menu' ? ZONES[0] : zoneAt(G.D).z;
