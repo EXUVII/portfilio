@@ -270,8 +270,8 @@ const START_SPEED = 20, MAX_SPEED = 46, MENU_SPEED = 13;
 const GRAVITY = 62, JUMP_V = 17.5, DJUMP_V = 16, SLAM_V = -44;
 const SLIDE_T = .62, FLIP_T = .5, ROLL_T = .42, STEP_UP = .4;
 const BLOCK_H = 3.1, RAMP_L = 6, POD_W = LANE_W * .86, HURDLE_W = LANE_W * .84;
-const SPAN = 540, NEAR_EDGE = 140, SPAWN_AHEAD = 200, CHAIN_TIME = 3.6;
-const TILE = 8, TILE_N = 68, WALL_FACE = HALF_ROAD + .25, WR_X = WALL_FACE - .78, WR_Y = 1.6, WALL_HOLD = 3, WALL_TILT = .95;
+const SPAN = 540, NEAR_EDGE = 140, SPAWN_AHEAD = 150, CHAIN_TIME = 3.6;
+const TILE = 8, TILE_N = 30, WALL_FACE = HALF_ROAD + .25, WR_X = WALL_FACE - .78, WR_Y = 1.6, WALL_HOLD = 3, WALL_TILT = .95;
 
 /* Places come in order on every run and then loop. Reaching one for the first time saves it and can unlock an ability. */
 const ZONES = [
@@ -579,7 +579,8 @@ const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, .1, 140
 
 /* Curved world: every material bends the world sideways and up/down with distance, so the road winds and
    climbs ahead of you. Gameplay stays straight; this only changes what you see past the runner. */
-const BEND = { value: new THREE.Vector2() }, BEND_START = { value: 12 };
+const BEND = { value: new THREE.Vector2() }, BEND_START = { value: 14 };
+const WORLD_DROP = .0015;   // the world curves down over a crest ~40 m ahead, so distant pieces stay hidden until they rise into view
 const BEND_GLSL = 'mv.xy += uBend * pow(max(0., -mv.z - uBendStart), 2.);';
 function bendMaterial(m) {
   if (!m || m.userData.bent || m.userData.noBend || m.isShaderMaterial) return;
@@ -939,7 +940,7 @@ function cityMaterial(m) {
   m.onBeforeCompile = sh => {
     sh.uniforms.uBend = BEND; sh.uniforms.uBendStart = BEND_START; sh.uniforms.uBehind = CITY_BEHIND;
     sh.vertexShader = 'attribute float aSink; uniform vec2 uBend; uniform float uBendStart, uBehind; varying float vCamDist;\n' + sh.vertexShader
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\n{ float wz = (modelMatrix * vec4(transformed, 1.)).z; transformed.y -= aSink * max(1. - smoothstep(-400., -240., wz), smoothstep(uBehind, uBehind + 25., wz)); }')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n{ float wz = (modelMatrix * vec4(transformed, 1.)).z; transformed.y -= aSink * max(1. - smoothstep(-230., -150., wz), smoothstep(uBehind, uBehind + 25., wz)); }')
       .replace('#include <project_vertex>', '#include <project_vertex>\n{ vec4 mv = mvPosition; ' + BEND_GLSL + ' mvPosition = mv; gl_Position = projectionMatrix * mvPosition; vCamDist = -mvPosition.z; }');
     // Far buildings read as silhouettes: their window lights fade out with distance, so detail stays near the runner.
     sh.fragmentShader = 'varying float vCamDist;\n' + sh.fragmentShader
@@ -2219,7 +2220,7 @@ function updateCamera(rdt) {
   camera.fov = damp(camera.fov, fovT, 5, rdt); camera.updateProjectionMatrix();
   sky.position.copy(camera.position);
   G.fogK = damp(G.fogK, G.state === 'menu' ? 0 : 1, 1.5, rdt);
-  scene.fog.near = lerp(18, 40, G.fogK); scene.fog.far = lerp(135, 215, G.fogK);
+  scene.fog.near = lerp(18, 26, G.fogK); scene.fog.far = lerp(135, 150, G.fogK);
 }
 
 /* ----- the look of each place blends in over a few seconds ----- */
@@ -2233,7 +2234,7 @@ function updateEnv(rdt) {
   scene.fog.color.copy(ENV.fog); skyMat.uniforms.uFog.value.copy(ENV.fog); skyMat.uniforms.uNight.value = ENV.night;
   lampPools.material.opacity = ENV.pools; hemiLight.intensity = ENV.hemi; sunLight.intensity = ENV.sunI; rimLight.intensity = 1.6 * (1 - ENV.night * .6);
   const t = G.D;
-  BEND.value.set(ENV.bx * (Math.sin(t * .009) + .55 * Math.sin(t * .021 + 1.3)) / 1.55, ENV.by * Math.sin(t * .013 + .7));
+  BEND.value.set(ENV.bx * (Math.sin(t * .009) + .55 * Math.sin(t * .021 + 1.3)) / 1.55, -WORLD_DROP + ENV.by * .5 * Math.sin(t * .013 + .7));
 }
 const bannerQ = []; let bannerTimer = 0;
 function showBanner(eyebrow, title, sub, cls = '') { bannerQ.push({ eyebrow, title, sub, cls }); if (!bannerTimer) nextBanner(); }

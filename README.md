@@ -19,7 +19,7 @@ Every run passes through three places in order, then loops with the speed still 
 2. **Downtown Canyon** (900 m): night, with neon building walls on both sides and collapsed stretches of road that are too long to jump.
 3. **Broken Skyway** (2,000 m): a collapsed overpass under repair, with construction panels to run on and long collapses that need wall jumps.
 
-The road winds and climbs ahead of you. Reaching a place for the first time saves it and unlocks an ability: **wall run** in the canyon and **wall jump** on the skyway. The first time you need each one, time slows down and a hint shows the move. Progress is saved in your browser, and the menu lists what you've found. Once you've unlocked wall run, wall sections can also turn up on the highway.
+The world curves down over a crest just ahead, so distant pieces stay hidden and rise into view as you approach, and the road winds from side to side. Reaching a place for the first time saves it and unlocks an ability: **wall run** in the canyon and **wall jump** on the skyway. The first time you need each one, time slows down and a hint shows the move. Progress is saved in your browser, and the menu lists what you've found. Once you've unlocked wall run, wall sections can also turn up on the highway.
 
 ### Performance
 
