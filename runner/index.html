@@ -593,23 +593,35 @@ function bendMaterial(m) {
 }
 function bendObject(o) { o.traverse(c => { if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach(bendMaterial); }); }
 
-const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: isTouch ? 0 : 4 });
+// Anti-aliasing: 4x on normal screens, 2x on high-density screens where pixels are already tiny
+const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: isTouch ? 0 : DPR >= 1.5 ? 2 : 4 });
 const composer = new EffectComposer(renderer, rt);
 composer.setPixelRatio(DPR);
 composer.setSize(innerWidth, innerHeight);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .55, .5, .95);
+// The glow is a wide blur, so it is computed at half the usual internal resolution; it looks the same.
+const bloomSetSize = bloom.setSize.bind(bloom);
+bloom.setSize = (w, h) => bloomSetSize(Math.max(2, Math.round(w * .5)), Math.max(2, Math.round(h * .5)));
 composer.addPass(bloom);
-composer.addPass(new OutputPass());
 const finalPass = new ShaderPass({
   uniforms: { tDiffuse: { value: null }, uCA: { value: .0015 }, uVig: { value: .35 }, uTime: { value: 0 }, uFlash: { value: 0 } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: `
     uniform sampler2D tDiffuse; uniform float uCA, uVig, uTime, uFlash; varying vec2 vUv;
+    // Tone mapping and sRGB output happen here too, which saves a separate full-screen pass.
+    vec3 ssRRTFit(vec3 v){ vec3 a = v * (v + .0245786) - .000090537; vec3 b = v * (.983729 * v + .4329510) + .238081; return a / b; }
+    vec3 ssAces(vec3 c){
+      const mat3 I = mat3(vec3(.59719, .07600, .02840), vec3(.35458, .90834, .13383), vec3(.04823, .01566, .83777));
+      const mat3 O = mat3(vec3(1.60475, -.10208, -.00327), vec3(-.53108, 1.10813, -.07276), vec3(-.07367, -.00605, 1.07602));
+      return clamp(O * ssRRTFit(I * (c / .6)), 0., 1.);
+    }
+    vec3 ssSRGB(vec3 c){ return mix(pow(c, vec3(.41666)) * 1.055 - .055, c * 12.92, vec3(lessThanEqual(c, vec3(.0031308)))); }
     void main(){
       vec2 c = vUv - .5; float r = dot(c, c);
       vec2 off = c * uCA * (.4 + r * 2.5);
       vec3 col = vec3(texture2D(tDiffuse, vUv + off).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - off).b);
+      col = ssSRGB(ssAces(col));
       col *= 1. - uVig * r * 1.6;
       float n = fract(sin(dot(vUv * vec2(1920., 1080.) + uTime * 61., vec2(12.9898, 78.233))) * 43758.5453);
       col += (n - .5) * .022;
@@ -627,6 +639,14 @@ function canvasTex(w, h, draw, { repeat = true } = {}) {
   if (repeat) t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return t;
 }
+// A copy of some of a geometry's material groups (for example only the sides of a box), for merging.
+function subGeo(geo, groupIds) {
+  const src = geo.index.array, idx = [];
+  for (const gi of groupIds) { const gr = geo.groups[gi]; for (let k = gr.start; k < gr.start + gr.count; k++) idx.push(src[k]); }
+  const out = new THREE.BufferGeometry();
+  for (const name of Object.keys(geo.attributes)) out.setAttribute(name, geo.attributes[name].clone());
+  out.setIndex(idx); return out;
+}
 function scaleBoxUV(geo, faces, ou = 0, ov = 0) {
   const uv = geo.attributes.uv;
   for (let f = 0; f < 6; f++) for (let v = 0; v < 4; v++) { const i = f * 4 + v; uv.setXY(i, uv.getX(i) * faces[f][0] + ou, uv.getY(i) * faces[f][1] + ov); }
@@ -643,7 +663,7 @@ const skyMat = new THREE.ShaderMaterial({
     float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
       return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
-    float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 5; i++){ v += a * noise(p); p *= 2.03; a *= .5; } return v; }
+    float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 4; i++){ v += a * noise(p); p *= 2.03; a *= .5; } return v; }
     void main(){
       vec3 d = normalize(vDir); float h = d.y;
       vec3 sd = normalize(vec3(0., .06, -1.));
@@ -658,7 +678,7 @@ const skyMat = new THREE.ShaderMaterial({
       vec3 sunC = mix(vec3(1., .26, .3), vec3(1., .78, .42), smoothstep(-.01, .1, h));
       col += sunC * disk * 2.4 * uSun * (1. - uNight);
       col += (vec3(1., .42, .2) * pow(sdot, 60.) * .7 + vec3(1., .25, .35) * pow(sdot, 8.) * .25) * uSun * (1. - uNight);
-      if (h > 0.){
+      if (h > 0. && h < .5){
         vec2 cp = d.xz / (h + .12) * 1.4; cp.x += uTime * .012;
         float c = fbm(cp); c = smoothstep(.52, .86, c) * smoothstep(0., .06, h) * (1. - smoothstep(.22, .5, h));
         vec3 cc = mix(vec3(1., .45, .35) * (.45 + pow(az, 2.) * 1.2), vec3(.22, .07, .28), smoothstep(.03, .3, h));
@@ -833,26 +853,48 @@ const signMats = SIGN_WORDS.map((word, i) => {
   }, { repeat: false });
   return new THREE.MeshBasicMaterial({ map: tex, color: new THREE.Color(col).multiplyScalar(2.4), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
 });
-const buildings = [];
+/* The whole city is merged into one mesh per material and drawn as two copies that leapfrog each other,
+   so 64 buildings cost about a dozen draw calls. Far buildings sink into the haze in the vertex shader. */
+function cityMaterial(m) {
+  m.userData.bent = true;
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uBend = BEND; sh.uniforms.uBendStart = BEND_START;
+    sh.vertexShader = 'attribute float aSink; uniform vec2 uBend; uniform float uBendStart;\n' + sh.vertexShader
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n{ float wz = (modelMatrix * vec4(transformed, 1.)).z; transformed.y -= aSink * (1. - smoothstep(-400., -240., wz)); }')
+      .replace('#include <project_vertex>', '#include <project_vertex>\n{ vec4 mv = mvPosition; ' + BEND_GLSL + ' mvPosition = mv; gl_Position = projectionMatrix * mvPosition; }');
+  };
+  m.customProgramCacheKey = () => 'city';
+}
+const cityParts = new Map();
+function cityPart(mat, geo, sink) {
+  geo.setAttribute('aSink', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count).fill(sink), 1));
+  if (!cityParts.has(mat)) cityParts.set(mat, []);
+  cityParts.get(mat).push(geo);
+}
 for (let i = 0; i < 64; i++) {
   const side = i % 2 ? 1 : -1, near = Math.random() < .5;
   const w = rand(7, 16), d = rand(7, 18);
   const top = near ? rand(-26, 6) : rand(-8, 34);
   const x = side * (HALF_ROAD + (near ? rand(5, 16) : rand(16, 60)) + w / 2);
-  const h = top + 110;
-  const geo = scaleBoxUV(new THREE.BoxGeometry(w, h, d), [[d / 12, h / 28], [d / 12, h / 28], [1, 1], [1, 1], [w / 12, h / 28], [w / 12, h / 28]], Math.random(), Math.random());
-  const mat = buildMats[i % 4];
-  const m = new THREE.Mesh(geo, [mat, mat, roofMat, roofMat, mat, mat]);
-  m.userData = { top, h, baseY: top - h / 2 };
-  m.position.set(x, top - h / 2, rand(NEAR_EDGE - SPAN, NEAR_EDGE));
-  if (top > 14 && Math.random() < .6) { const b = new THREE.Mesh(new THREE.SphereGeometry(.35, 8, 6), beaconMat); b.position.y = h / 2 + .6; m.add(b); }
+  const h = top + 110, baseY = top - h / 2, z = rand(NEAR_EDGE - SPAN, NEAR_EDGE), sink = top + 14;
+  const box = scaleBoxUV(new THREE.BoxGeometry(w, h, d), [[d / 12, h / 28], [d / 12, h / 28], [1, 1], [1, 1], [w / 12, h / 28], [w / 12, h / 28]], Math.random(), Math.random());
+  cityPart(buildMats[i % 4], subGeo(box, [0, 1, 4, 5]).translate(x, baseY, z), sink);
+  cityPart(roofMat, subGeo(box, [2, 3]).translate(x, baseY, z), sink);
+  if (top > 14 && Math.random() < .6) cityPart(beaconMat, new THREE.SphereGeometry(.35, 8, 6).translate(x, baseY + h / 2 + .6, z), sink);
   if (top > -4 && Math.random() < .4) {
-    const s = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 6), pick(signMats));
-    s.position.set(-side * (w / 2 + .08), h / 2 - rand(4, 9), rand(-d / 3, d / 3)); s.rotation.y = -side * Math.PI / 2;
-    m.add(s);
+    cityPart(pick(signMats), new THREE.PlaneGeometry(1.7, 6).rotateY(-side * Math.PI / 2)
+      .translate(x - side * (w / 2 + .08), baseY + h / 2 - rand(4, 9), z + rand(-d / 3, d / 3)), sink);
   }
-  m.frustumCulled = false; scene.add(m); buildings.push(m);
 }
+const cityCopies = [new THREE.Group(), new THREE.Group()];
+for (const [mat, geos] of cityParts) {
+  const merged = mergeGeometries(geos); cityMaterial(mat);
+  for (const c of cityCopies) { const m = new THREE.Mesh(merged, mat); m.frustumCulled = false; c.add(m); }
+}
+cityCopies.forEach(c => scene.add(c));
+let cityZ = 0;
+function placeCity() { cityCopies[0].position.z = cityZ; cityCopies[1].position.z = cityZ - SPAN; }
+placeCity();
 
 /* ----- distant skyline silhouettes ----- */
 function skylineTex(base, litP, maxH) {
@@ -904,6 +946,22 @@ function setInst(mesh, i, show, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, ry 
   if (show) { dummy.position.set(x, y, z); dummy.scale.set(sx, sy, sz); } else { dummy.position.set(0, -999, 0); dummy.scale.set(0, 0, 0); }
   dummy.rotation.set(rx, ry, 0); dummy.updateMatrix(); mesh.setMatrixAt(i, dummy.matrix);
 }
+const SIDES = [-1, 1];
+// Jagged edge pieces are generated once per gap edge and cached; each frame only moves them.
+function edgeParts(g, dir) {
+  const key = dir > 0 ? 'edgeFar' : 'edgeNear'; if (g[key]) return g[key];
+  const rnd = mulberry(g.seed + (dir > 0 ? 99 : 0)), c = [], r = [];
+  for (let k = 0; k < CHUNKS; k++) { const sx = .4 + rnd() * .5, sy = .25 + rnd() * .35, sz = .4 + rnd() * .5; c.push([-HALF_ROAD + (k + rnd()) * (ROAD_W / CHUNKS), sy * .25, -dir * .3, sx, sy, sz, rnd() * 3, (rnd() - .5) * .5]); }
+  for (let k = 0; k < REBARS; k++) { const L = .5 + rnd() * 1.1; r.push([-HALF_ROAD + .5 + rnd() * (ROAD_W - 1), -.15 - rnd() * .6, dir * L / 2, 1, 1, L, (rnd() - .5) * .5, (rnd() - .3) * .5]); }
+  return (g[key] = { c, r });
+}
+function placeEdge(g, dd, dir, e) {
+  const z = G.D - dd; if (z < -250 || z > 30 || e >= EDGE_MAX) return e;
+  const parts = edgeParts(g, dir);
+  parts.c.forEach((q, k) => setInst(chunkTiles, e * CHUNKS + k, true, q[0], q[1], z + q[2], q[3], q[4], q[5], q[6], q[7]));
+  parts.r.forEach((q, k) => setInst(rebarTiles, e * REBARS + k, true, q[0], q[1], z + q[2], q[3], q[4], q[5], q[6], q[7]));
+  return e + 1;
+}
 function updateTiles(dD) {
   const menu = G.state === 'menu';
   for (let i = 0; i < TILE_N; i++) {
@@ -912,7 +970,7 @@ function updateTiles(dD) {
     setInst(roadTiles, i, !gap, 0, 0, z); setInst(slabTiles, i, !gap, 0, 0, z);
     const crack = !gap && !menu && (nearGap(d) || (zoneKeyAt(d) === 'skyway' && hash1(ti) < .3));
     setInst(crackTiles, i, crack, 0, 0, z, 1, 1, 1, hash1(ti + 7) < .5 ? 0 : Math.PI);
-    for (const sd of [-1, 1]) {
+    for (const sd of SIDES) {
       const j = i * 2 + (sd > 0 ? 1 : 0);
       setInst(railTiles, j, !gap, sd * (HALF_ROAD + .1), 0, z); setInst(stripTiles, j, !gap, sd * (HALF_ROAD + .1), 0, z);
       const fac = facadeAt(sd, d), pan = !fac && !menu && panelAt(sd, d);
@@ -923,21 +981,7 @@ function updateTiles(dD) {
   }
   // jagged concrete and rebar where the deck has broken off
   let e = 0;
-  if (!menu) for (const g of G.gaps) {
-    for (const [dd, dir] of [[g.d0, -1], [g.d1, 1]]) {
-      const z = G.D - dd; if (z < -250 || z > 30 || e >= EDGE_MAX) continue;
-      const rnd = mulberry(g.seed + (dir > 0 ? 99 : 0));
-      for (let c = 0; c < CHUNKS; c++) {
-        const sx = .4 + rnd() * .5, sy = .25 + rnd() * .35, sz = .4 + rnd() * .5;
-        setInst(chunkTiles, e * CHUNKS + c, true, -HALF_ROAD + (c + rnd()) * (ROAD_W / CHUNKS), sy * .25, z - dir * .3, sx, sy, sz, rnd() * 3, (rnd() - .5) * .5);
-      }
-      for (let r = 0; r < REBARS; r++) {
-        const L = .5 + rnd() * 1.1;
-        setInst(rebarTiles, e * REBARS + r, true, -HALF_ROAD + .5 + rnd() * (ROAD_W - 1), -.15 - rnd() * .6, z + dir * L / 2, 1, 1, L, (rnd() - .5) * .5, (rnd() - .3) * .5);
-      }
-      e++;
-    }
-  }
+  if (!menu) for (const g of G.gaps) { e = placeEdge(g, g.d0, -1, e); e = placeEdge(g, g.d1, 1, e); }
   for (; e < EDGE_MAX; e++) { for (let c = 0; c < CHUNKS; c++) setInst(chunkTiles, e * CHUNKS + c, false); for (let r = 0; r < REBARS; r++) setInst(rebarTiles, e * REBARS + r, false); }
   for (const m of TILE_MESHES) m.instanceMatrix.needsUpdate = true;
 }
@@ -980,7 +1024,7 @@ const R = {};
   const accent = new THREE.MeshStandardMaterial({ color: '#ff6a3d', emissive: '#ff5a2a', emissiveIntensity: 2.2, roughness: .4 });
   const soleMat = new THREE.MeshStandardMaterial({ color: '#3a2c3c', roughness: .85 });
   const visor = new THREE.MeshStandardMaterial({ color: '#07070f', emissive: '#46f0e0', emissiveIntensity: 3.4, roughness: .15, metalness: .6 });
-  const M = (geo, mat) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; return m; };
+  const M = (geo, mat) => { const m = new THREE.Mesh(geo, mat); m.castShadow = mat !== accent && mat !== visor && mat !== soleMat; return m; };
   const cap = (r, l) => new THREE.CapsuleGeometry(r, l, 4, 10);
   R.root = new THREE.Group(); R.squash = new THREE.Group(); R.pivot = new THREE.Group(); R.rig = new THREE.Group();
   R.root.add(R.squash); R.squash.add(R.pivot); R.pivot.position.y = .95; R.pivot.add(R.rig); R.rig.position.y = -.95;
@@ -1211,37 +1255,43 @@ const gatePostGeo = new THREE.BoxGeometry(.14, 3.4, .14).translate(0, 1.7, 0);
 const gateBoardGeo = new THREE.BoxGeometry(HURDLE_W, .95, .14);
 const gateBeamGeo = new THREE.BoxGeometry(HURDLE_W + .16, .14, .2);
 
+/* Each obstacle is a single pre-merged mesh with one group per material (fewer draw calls). */
+const HURDLE_GEO = mergeGeometries([
+  hurdleBoardGeo.clone().translate(0, .68, 0),
+  mergeGeometries([-1, 1].flatMap(sd => [postGeo.clone().translate(sd * (HURDLE_W / 2 - .05), 0, 0), footGeo.clone().translate(sd * (HURDLE_W / 2 - .05), .025, 0)])),
+  tubeGeo.clone().translate(0, .97, 0)
+], true);
+const HURDLE_MATS = [hazardMat, metalMat, coralGlow];
 function makeHurdle() {
-  const g = new THREE.Group();
-  const board = new THREE.Mesh(hurdleBoardGeo, hazardMat); board.position.y = .68; board.castShadow = true; g.add(board);
-  for (const s of [-1, 1]) {
-    const p = new THREE.Mesh(postGeo, metalMat); p.position.x = s * (HURDLE_W / 2 - .05); p.castShadow = true; g.add(p);
-    const f = new THREE.Mesh(footGeo, metalMat); f.position.set(s * (HURDLE_W / 2 - .05), .025, 0); g.add(f);
-  }
-  const tube = new THREE.Mesh(tubeGeo, coralGlow); tube.position.y = .97; g.add(tube);
-  return { mesh: g, kind: 'hurdle', w: HURDLE_W, h: 1.0, len: .4 };
+  const m = new THREE.Mesh(HURDLE_GEO, HURDLE_MATS); m.castShadow = true;
+  return { mesh: m, kind: 'hurdle', w: HURDLE_W, h: 1.0, len: .4 };
 }
+const GATE_GEO = mergeGeometries([
+  mergeGeometries([gatePostGeo.clone().translate(-HURDLE_W / 2, 0, 0), gatePostGeo.clone().translate(HURDLE_W / 2, 0, 0), gateBeamGeo.clone().translate(0, 3.35, 0)]),
+  gateBoardGeo.clone().translate(0, 1.95, 0),
+  tubeGeo.clone().translate(0, 1.4, 0)
+], true);
+const GATE_MATS = [metalMat, gateMat, tealGlow];
 function makeGate() {
-  const g = new THREE.Group();
-  for (const s of [-1, 1]) { const p = new THREE.Mesh(gatePostGeo, metalMat); p.position.x = s * HURDLE_W / 2; p.castShadow = true; g.add(p); }
-  const board = new THREE.Mesh(gateBoardGeo, gateMat); board.position.y = 1.95; board.castShadow = true; g.add(board);
-  const tube = new THREE.Mesh(tubeGeo, tealGlow); tube.position.y = 1.4; g.add(tube);
-  const beam = new THREE.Mesh(gateBeamGeo, metalMat); beam.position.y = 3.35; g.add(beam);
-  return { mesh: g, kind: 'gate', w: HURDLE_W, h: 3.4, y0: 1.28, len: .4 };
+  const m = new THREE.Mesh(GATE_GEO, GATE_MATS); m.castShadow = true;
+  return { mesh: m, kind: 'gate', w: HURDLE_W, h: 3.4, y0: 1.28, len: .4 };
 }
-const podGeos = {}, skirtGeos = {}, glowGeos = {};
-function makeBlock(L) {
+const podGeos = {};
+function podGeo(L) {
   if (!podGeos[L]) {
-    const bh = BLOCK_H - .3;
-    podGeos[L] = scaleBoxUV(new THREE.BoxGeometry(POD_W, bh, L), [[L / 4, 1], [L / 4, 1], [1, 1], [1, 1], [1, 1], [1, 1]]);
-    skirtGeos[L] = new THREE.BoxGeometry(POD_W - .4, .3, L - .6);
-    glowGeos[L] = new THREE.BoxGeometry(.05, .06, L - .9);
+    const box = scaleBoxUV(new THREE.BoxGeometry(POD_W, BLOCK_H - .3, L), [[L / 4, 1], [L / 4, 1], [1, 1], [1, 1], [1, 1], [1, 1]]).translate(0, (BLOCK_H + .3) / 2, 0);
+    podGeos[L] = mergeGeometries([
+      subGeo(box, [0, 1]), subGeo(box, [2, 3]), subGeo(box, [4, 5]),
+      new THREE.BoxGeometry(POD_W - .4, .3, L - .6).translate(0, .15, 0),
+      mergeGeometries([-1, 1].map(sd => new THREE.BoxGeometry(.05, .06, L - .9).translate(sd * (POD_W - .4) / 2, .1, 0)))
+    ], true);
   }
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(podGeos[L], podMats[0]); body.position.y = (BLOCK_H + .3) / 2; body.castShadow = body.receiveShadow = true; g.add(body);
-  const skirt = new THREE.Mesh(skirtGeos[L], metalMat); skirt.position.y = .15; g.add(skirt);
-  for (const s of [-1, 1]) { const gl = new THREE.Mesh(glowGeos[L], tealGlow); gl.position.set(s * (POD_W - .4) / 2, .1, 0); g.add(gl); }
-  return { mesh: g, body, kind: 'block', w: POD_W, h: BLOCK_H, len: L };
+  return podGeos[L];
+}
+const podMatSets = podMats.map(m => [m[0], m[2], m[4], metalMat, tealGlow]);
+function makeBlock(L) {
+  const m = new THREE.Mesh(podGeo(L), podMatSets[0]); m.castShadow = m.receiveShadow = true;
+  return { mesh: m, kind: 'block', w: POD_W, h: BLOCK_H, len: L };
 }
 function wedgeGeo(W, H, L) {
   const a = [-W / 2, 0, L / 2], b = [W / 2, 0, L / 2], c = [W / 2, H, -L / 2], d = [-W / 2, H, -L / 2], e = [-W / 2, 0, -L / 2], f = [W / 2, 0, -L / 2];
@@ -1272,7 +1322,10 @@ const coinFace = canvasTex(128, 128, (g, w, h) => {
 }, { repeat: false });
 const coinSideMat = new THREE.MeshStandardMaterial({ color: '#ffc24a', metalness: 1, roughness: .25, emissive: '#ff9a1a', emissiveIntensity: .6 });
 const coinFaceMat = new THREE.MeshStandardMaterial({ map: coinFace, emissiveMap: coinFace, emissive: '#ffae33', emissiveIntensity: .9, metalness: 1, roughness: .3 });
-function makeCoin() { const m = new THREE.Mesh(coinGeo, [coinSideMat, coinFaceMat, coinFaceMat]); return { mesh: m }; }
+const COIN_MAX = 220;
+const coinInst = new THREE.InstancedMesh(coinGeo, [coinSideMat, coinFaceMat, coinFaceMat], COIN_MAX);
+coinInst.frustumCulled = false; coinInst.count = 0; scene.add(coinInst);
+function makeCoin() { return { mesh: new THREE.Object3D(), virtual: true }; }   // transform only; drawn through coinInst
 
 const POWERS = {
   magnet: { color: '#ff6a3d', label: 'MAGNET', dur: 10 },
@@ -1304,7 +1357,7 @@ const pools = {};
 function acquire(key, make) {
   const p = pools[key] || (pools[key] = []);
   let o = p.pop();
-  if (!o) { o = make(); o.pkey = key; bendObject(o.mesh); scene.add(o.mesh); }
+  if (!o) { o = make(); o.pkey = key; if (!o.virtual) { bendObject(o.mesh); scene.add(o.mesh); } }
   o.mesh.visible = true; o.active = true; return o;
 }
 function release(o) { o.active = false; o.mesh.visible = false; pools[o.pkey].push(o); }
@@ -1349,7 +1402,7 @@ function spawnObstacle(kind, lane, d, L) {
   if (kind === 'hurdle') o = acquire('hurdle', makeHurdle);
   else if (kind === 'gate') o = acquire('gate', makeGate);
   else if (kind === 'ramp') o = acquire('ramp', makeRamp);
-  else { o = acquire('block' + L, () => makeBlock(L)); o.body.material = pick(podMats); }
+  else { o = acquire('block' + L, () => makeBlock(L)); o.mesh.material = pick(podMatSets); }
   o.lane = lane; o.x = lane * LANE_W; o.d = d; o.passed = false; o.broken = false; o.roofed = false; o.fly = null;
   o.mesh.rotation.set(0, 0, 0); o.mesh.position.set(o.x, 0, G.D - d);
   G.obstacles.push(o); return o;
@@ -1752,11 +1805,8 @@ function updateScenery(dt, dD) {
   placeLamps(true);
   for (let i = 0; i < PILLAR_N; i++) { pillarZ[i] += dD; if (pillarZ[i] > NEAR_EDGE) pillarZ[i] -= SPAN; }
   placePillars();
-  for (const b of buildings) {
-    b.position.z += dD; if (b.position.z > NEAR_EDGE + 10) b.position.z -= SPAN;
-    const f = smooth01(-400, -240, b.position.z);
-    b.position.y = b.userData.baseY - (1 - f) * (b.userData.top + 14);
-  }
+  cityZ += dD; if (cityZ > SPAN) cityZ -= SPAN;
+  placeCity();
   for (const gt of gantries) {
     if (!gt.active) continue;
     gt.z += dD; gt.mesh.position.set(0, 0, gt.z);
@@ -1971,6 +2021,11 @@ function updateCoins(dt) {
     if (G.state === 'play' && !P.dead && Math.abs(z - P.z) < .9 && Math.abs(x - P.x) < .95 && y > P.y - .3 && y < top + .2) collect(c, x, y, z);
   }
 }
+function drawCoins() {
+  let n = 0;
+  for (const c of G.coinList) { if (n >= COIN_MAX) break; c.mesh.updateMatrix(); coinInst.setMatrixAt(n++, c.mesh.matrix); }
+  coinInst.count = n; coinInst.instanceMatrix.needsUpdate = true;
+}
 function collect(c, x, y, z) {
   c.taken = true; c.t = 0; c.fx = x; c.fy = y; c.fz = z;
   G.coins++;
@@ -2005,8 +2060,8 @@ function updateTrail(dt) {
   // Sample the runner's path by time so the ribbon is the same length at any frame rate.
   const hy = P.sliding > 0 && P.grounded ? .75 : 1.28;
   const h = trail.hist;
-  h.unshift({ t: G.time, x: P.x, y: R.root.position.y + hy * P.sy });
-  if (h.length > HIST_N) h.length = HIST_N;
+  const e = h.length >= HIST_N ? h.pop() : {};
+  e.t = G.time; e.x = P.x; e.y = R.root.position.y + hy * P.sy; h.unshift(e);
   const segT = TRAIL_SEG / Math.max(G.speed, 6);
   let k = 0;
   for (let i = 0; i < TRAIL_N; i++) {
@@ -2101,12 +2156,12 @@ function updateCamera(rdt) {
 
 /* ----- the look of each place blends in over a few seconds ----- */
 const ENV = { fog: FOG.clone(), night: 0, pools: .32, hemi: 1.15, sunI: 2.7, bx: .0006, by: .00018 };
-const envColor = new THREE.Color();
+const envColor = new THREE.Color(), ENV_KEYS = ['night', 'pools', 'hemi', 'sunI', 'bx', 'by'];
 function updateEnv(rdt) {
   const z = G.state === 'menu' ? ZONES[0] : zoneAt(G.D).z;
   const r = 1 - Math.exp(-.9 * rdt);
   ENV.fog.lerp(envColor.set(z.fog), r);
-  for (const k of ['night', 'pools', 'hemi', 'sunI', 'bx', 'by']) ENV[k] = lerp(ENV[k], z[k], r);
+  for (const k of ENV_KEYS) ENV[k] = lerp(ENV[k], z[k], r);
   scene.fog.color.copy(ENV.fog); skyMat.uniforms.uFog.value.copy(ENV.fog); skyMat.uniforms.uNight.value = ENV.night;
   lampPools.material.opacity = ENV.pools; hemiLight.intensity = ENV.hemi; sunLight.intensity = ENV.sunI; rimLight.intensity = 1.6 * (1 - ENV.night * .6);
   const t = G.D;
@@ -2167,6 +2222,8 @@ function popup(text, cls = '', sub = '') {
   if (sub) { const s = document.createElement('span'); s.textContent = sub; d.appendChild(s); }
   el.pops.appendChild(d); setTimeout(() => d.remove(), 1000);
 }
+function setHidden(e, v) { if (e.hidden !== v) e.hidden = v; }
+function setWidth(e, f) { const w = Math.round(f * 100) + '%', b = e.querySelector('b'); if (b.style.width !== w) b.style.width = w; }
 function updateHUD(dt) {
   if (G.state !== 'play') return;
   G.chainT -= dt;
@@ -2178,10 +2235,11 @@ function updateHUD(dt) {
   if (G.coins !== shown.coins) { el.coins.textContent = G.coins.toLocaleString('en-US'); shown.coins = G.coins; }
   const m = multTotal();
   if (m !== shown.mult) { el.mult.textContent = '×' + m; el.chain.classList.toggle('on', m > 1); shown.mult = m; }
-  el.chainbar.style.strokeDashoffset = (176 * (1 - clamp(G.chainT / CHAIN_TIME, 0, 1))).toFixed(1);
-  el.pwM.hidden = !(P.magnet > 0); if (P.magnet > 0) el.pwM.querySelector('b').style.width = (P.magnet / POWERS.magnet.dur * 100) + '%';
-  el.pwX.hidden = !(P.x2 > 0); if (P.x2 > 0) el.pwX.querySelector('b').style.width = (P.x2 / POWERS.x2.dur * 100) + '%';
-  el.pwS.hidden = !P.shield;
+  const dash = (176 * (1 - clamp(G.chainT / CHAIN_TIME, 0, 1))).toFixed(0);
+  if (dash !== shown.dash) { el.chainbar.style.strokeDashoffset = dash; shown.dash = dash; }
+  setHidden(el.pwM, !(P.magnet > 0)); if (P.magnet > 0) setWidth(el.pwM, P.magnet / POWERS.magnet.dur);
+  setHidden(el.pwX, !(P.x2 > 0)); if (P.x2 > 0) setWidth(el.pwX, P.x2 / POWERS.x2.dur);
+  setHidden(el.pwS, !P.shield);
 }
 
 /* =====================================================================
@@ -2189,7 +2247,7 @@ function updateHUD(dt) {
    ===================================================================== */
 function clearWorld() {
   for (const o of G.obstacles) release(o); G.obstacles.length = 0;
-  for (const c of G.coinList) release(c); G.coinList.length = 0;
+  for (const c of G.coinList) release(c); G.coinList.length = 0; coinInst.count = 0;
   for (const p of G.powerList) release(p); G.powerList.length = 0;
   for (const gt of gantries) { gt.active = false; gt.mesh.visible = false; }
 }
@@ -2305,7 +2363,7 @@ function resize() {
   camera.aspect = w / h;
   baseFov = camera.aspect < 1 ? Math.min(86, 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(50) / 2) / camera.aspect) * 180 / Math.PI) : 60;
   camera.fov = baseFov; camera.updateProjectionMatrix();
-  particles.mat.uniforms.uScale.value = h * DPR / (2 * Math.tan(THREE.MathUtils.degToRad(baseFov) / 2));
+  particles.mat.uniforms.uScale.value = h * DPR * perf.scale / (2 * Math.tan(THREE.MathUtils.degToRad(baseFov) / 2));
 }
 addEventListener('resize', resize);
 
@@ -2339,6 +2397,7 @@ function tick(rdt) {
   updatePlayer(dt);
   updateObstacles(dt);
   updateCoins(dt);
+  drawCoins();
   updatePowerups(dt);
   particles.update(dt, dD);
   updateTrail(dt);
@@ -2357,9 +2416,28 @@ function tick(rdt) {
   finalPass.uniforms.uVig.value = G.state === 'dead' || G.state === 'over' ? .6 : .35;
   finalPass.uniforms.uTime.value = G.rtime;
 }
+/* Automatic resolution: if frames take too long the render resolution eases down a little, and it
+   comes back up when there's headroom. Effects are never switched off. */
+const perf = { acc: 0, n: 0, scale: 1, changed: 0, dropped: -1e9 };
+function applyPixelRatio() {
+  const pr = DPR * perf.scale;
+  renderer.setPixelRatio(pr); composer.setPixelRatio(pr); composer.setSize(innerWidth, innerHeight);
+  particles.mat.uniforms.uScale.value = innerHeight * pr / (2 * Math.tan(THREE.MathUtils.degToRad(baseFov) / 2));
+}
+function adaptResolution(ms, now) {
+  if (ms > 250 || G.state === 'paused') return;         // tab was hidden or the game is paused
+  perf.acc += ms; perf.n++;
+  if (perf.acc < 1000) return;
+  const avg = perf.acc / perf.n; perf.acc = 0; perf.n = 0;
+  let sc = perf.scale;
+  if (avg > 19.5) { sc = Math.max(.6, sc - .1); perf.dropped = now; }              // missing frames (below ~50 fps)
+  else if (avg < 17.4 && now - perf.dropped > 8000) sc = Math.min(1, sc + .05);    // holding 60+, and no recent drop
+  if (sc !== perf.scale && now - perf.changed > 1500) { perf.scale = sc; perf.changed = now; applyPixelRatio(); }
+}
 let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
+  adaptResolution(now - last, now);
   const rdt = Math.min((now - last) / 1000, 1 / 20); last = now;
   if (G.state !== 'paused') tick(rdt);
   composer.render();
@@ -2374,7 +2452,7 @@ const playBtn = $('btn-play');
 playBtn.disabled = false;
 playBtn.innerHTML = 'Run <kbd>Enter</kbd>';
 requestAnimationFrame(frame);
-window.__game = { G, P, R, startRun, moveLane, pressUp, pressDown, tick, camera, composer, gapAt, wallAt, zoneAt, save, BEND };
+window.__game = { G, P, R, startRun, moveLane, pressUp, pressDown, tick, camera, composer, renderer, gapAt, wallAt, zoneAt, save, BEND, perf, adaptResolution };
 })();
 </script>
 </body>

@@ -21,6 +21,10 @@ Every run passes through three places in order, then loops with the speed still 
 
 The road winds and climbs ahead of you. Reaching a place for the first time saves it and unlocks an ability: **wall run** in the canyon and **wall jump** on the skyway. The first time you need each one, time slows down and a hint shows the move. Progress is saved in your browser, and the menu lists what you've found. Once you've unlocked wall run, wall sections can also turn up on the highway.
 
+### Performance
+
+The city is merged into a few meshes, coins are drawn in one instanced call, and obstacles are pre-merged, so a typical frame takes about 140 draw calls. The glow is computed at reduced resolution and tone mapping shares the final full-screen pass. If a device can't hold about 50 fps, the render resolution eases down (never below 60%) and climbs back once it has headroom; no effects are switched off.
+
 ### Controls
 
 | Action | Keyboard | Touch |
