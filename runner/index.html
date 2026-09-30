@@ -626,8 +626,6 @@ const finalPass = new ShaderPass({
       col = mix(vec3(lum), col, 1.1);                        // a touch more colour
       col = mix(col, col * col * (3. - 2. * col), .22);       // gentle contrast curve
       col *= 1. - uVig * r * 1.6;
-      float n = fract(sin(dot(vUv * vec2(1920., 1080.) + uTime * 61., vec2(12.9898, 78.233))) * 43758.5453);
-      col += (n - .5) * .022;
       col = mix(col, vec3(1., .95, .9), uFlash);
       gl_FragColor = vec4(col, 1.);
     }`
@@ -735,7 +733,6 @@ const roadLines = [];
 for (const lx of [-LANE_W / 2, LANE_W / 2]) roadLines.push([roadX(lx) - .07 * roadU, 0, .14 * roadU, ROAD_PX * .55]);
 for (const ex of [-HALF_ROAD + .35, HALF_ROAD - .35]) roadLines.push([roadX(ex) - .09 * roadU, 0, .18 * roadU, ROAD_PX]);
 const roadWear = [];
-for (let i = 0; i < 1100; i++) { const L = pick(roadLines); roadWear.push([L[0] + Math.random() * L[2], L[1] + Math.random() * L[3], rand(1, 2.2)]); }
 function paintRoadLines(g, col, wear) {
   g.fillStyle = col; for (const L of roadLines) g.fillRect(...L);
   g.fillStyle = wear; for (const w of roadWear) g.fillRect(w[0], w[1], w[2], w[2]);
@@ -757,9 +754,8 @@ const roadMap = canvasTex(ROAD_PX, ROAD_PX, (g, w, h) => {
   }
   tyreTracks(g, 'rgba(12,10,22,.28)');
   const id = g.getImageData(0, 0, w, h), a = id.data;
-  for (let i = 0; i < a.length; i += 4) { const n = (Math.random() - .5) * 26 + (Math.random() < .02 ? 18 : 0); a[i] += n; a[i + 1] += n; a[i + 2] += n * 1.15; }
+  for (let i = 0; i < a.length; i += 4) { const n = (Math.random() - .5) * 12; a[i] += n; a[i + 1] += n; a[i + 2] += n * 1.15; }
   g.putImageData(id, 0, 0);
-  g.strokeStyle = 'rgba(10,6,20,.45)'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, h * .5); g.lineTo(w, h * .5 + 8); g.stroke();
   paintRoadLines(g, 'rgba(250,238,222,.9)', 'rgba(42,37,64,.85)');
 });
 const roadEmit = canvasTex(ROAD_PX, ROAD_PX, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); paintRoadLines(g, '#fff', '#000'); });
@@ -1000,6 +996,9 @@ function skylineTex(base, litP, maxH) {
   const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: skylineTex(col, lit, mh), transparent: true, fog: false, depthWrite: false }));
   p.material.userData.noBend = true;
   p.position.set(0, y, z); if (z > 0) p.rotation.y = Math.PI; p.renderOrder = -5; scene.add(p);
+  const base = new THREE.Mesh(new THREE.PlaneGeometry(w, 800), new THREE.MeshBasicMaterial({ color: col, fog: false, depthWrite: false }));
+  base.material.userData.noBend = true;
+  base.position.set(0, y - h / 2 - 399, z); base.rotation.y = p.rotation.y; base.renderOrder = -5; scene.add(base);
 });
 
 /* ----- canyon facades, construction panels and broken deck edges (all instanced on the tile grid) ----- */
@@ -1268,13 +1267,6 @@ function shockwave(x, y, z) {
   s.t = 0; s.mesh.visible = true; s.mesh.position.set(x, y + .05, z);
 }
 
-const LINE_N = 70;
-const linePos = new Float32Array(LINE_N * 6), lineData = [];
-const lineGeo = new THREE.BufferGeometry(); lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3).setUsage(THREE.DynamicDrawUsage));
-const lineMat = new THREE.LineBasicMaterial({ color: '#fff3e0', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
-const speedLines = new THREE.LineSegments(lineGeo, lineMat); speedLines.frustumCulled = false; scene.add(speedLines);
-function resetLine(l, far) { l.x = (Math.random() < .5 ? -1 : 1) * rand(2.2, 11); l.y = rand(.4, 8); l.z = far ? rand(-80, -30) : rand(-80, 10); }
-for (let i = 0; i < LINE_N; i++) { const l = {}; resetLine(l, false); lineData.push(l); }
 
 /* =====================================================================
    Obstacles, coins, power-ups
@@ -2176,18 +2168,6 @@ function updateShocks(dt, dD) {
     if (s.t >= 1) s.mesh.visible = false;
   }
 }
-function updateSpeedLines(dt) {
-  const k = speedK();
-  lineMat.opacity = damp(lineMat.opacity, G.state === 'play' ? clamp((k - .15) * .55, 0, .42) + Math.min(G.fovKick * .03, .3) : 0, 4, dt);
-  const len = 1.5 + G.speed * .12;
-  for (let i = 0; i < LINE_N; i++) {
-    const l = lineData[i]; l.z += G.speed * 1.6 * dt;
-    if (l.z > 12) resetLine(l, true);
-    const j = i * 6;
-    linePos[j] = l.x; linePos[j + 1] = l.y; linePos[j + 2] = l.z; linePos[j + 3] = l.x; linePos[j + 4] = l.y; linePos[j + 5] = l.z - len;
-  }
-  lineGeo.attributes.position.needsUpdate = true;
-}
 
 /* ----- camera ----- */
 const cam = { pos: new THREE.Vector3(2.4, 1.9, -6.2), look: new THREE.Vector3(0, 1.25, 0), roll: 0 };
@@ -2490,7 +2470,6 @@ function tick(rdt) {
   particles.update(dt, dD);
   updateTrail(dt);
   updateShocks(dt, dD);
-  updateSpeedLines(dt);
   updateCamera(rdt);
   updateHUD(dt);
   if (G.state === 'dead') {
@@ -2500,7 +2479,7 @@ function tick(rdt) {
   }
   G.flash = damp(G.flash, 0, 6, rdt); G.ca = damp(G.ca, 0, 3, rdt);
   finalPass.uniforms.uFlash.value = G.flash;
-  finalPass.uniforms.uCA.value = .0007 + (G.state === 'play' ? speedK() * .0014 : 0) + G.ca;
+  finalPass.uniforms.uCA.value = G.ca;
   finalPass.uniforms.uVig.value = G.state === 'dead' || G.state === 'over' ? .6 : .35;
   finalPass.uniforms.uTime.value = G.rtime;
 }
@@ -2518,7 +2497,7 @@ function adaptResolution(ms, now) {
   if (perf.acc < 1000) return;
   const avg = perf.acc / perf.n; perf.acc = 0; perf.n = 0;
   let sc = perf.scale;
-  if (avg > 19.5) { sc = Math.max(.6, sc - .1); perf.dropped = now; }              // missing frames (below ~50 fps)
+  if (avg > 19.5) { sc = Math.max(.75, sc - .08); perf.dropped = now; }              // missing frames (below ~50 fps)
   else if (avg < 17.4 && now - perf.dropped > 8000) sc = Math.min(1, sc + .05);    // holding 60+, and no recent drop
   if (sc !== perf.scale && now - perf.changed > 1500) { perf.scale = sc; perf.changed = now; applyPixelRatio(); }
 }

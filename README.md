@@ -6,10 +6,10 @@ A 3D endless runner that runs in the browser: [`runner/index.html`](runner/index
 
 Everything is generated in code: no image, model or audio files.
 
-- **Graphics**: Three.js (bundled locally in `runner/vendor/`) with custom shaders. That covers a dusk sky with a low sun, clouds and stars, a procedurally lit city, bloom, chromatic aberration, GPU particles, a ribbon trail and soft shadows.
+- **Graphics**: Three.js (bundled locally in `runner/vendor/`) with custom shaders. That covers a dusk sky with a low sun, clouds and stars, a procedurally lit city, bloom, GPU particles, a ribbon trail and soft shadows.
 - **Runner**: a character built from primitives and animated procedurally. It has a run cycle with footsteps, a jump with alternating lead leg, a front flip on double jump, a barrel roll when changing lanes in the air, a baseball slide, a ground slam with a shockwave, squash and stretch, landing crouch, stumble and a ragdoll-style wipeout.
 - **Sound**: synthesized live with the Web Audio API. Every effect is layered from oscillators, filtered noise, envelopes, stereo panning and a generated reverb. The coin chime rises in pitch along a combo, and a synthwave soundtrack plays from a small built-in sequencer. It gains layers as you get further, and its filter closes when you crash.
-- **Game feel**: input buffering, coyote time, hit-stop, slow motion on a crash, camera shake, a speed-scaled field of view, speed lines, a combo multiplier and trick bonuses (Perfect, Limbo, Close Call, Rooftop, Slam, Flip). It also has magnet, shield and double-score power-ups, distance signs, and a "Your best" sign on the highway at your record distance.
+- **Game feel**: input buffering, coyote time, hit-stop, slow motion on a crash, camera shake, a speed-scaled field of view, a combo multiplier and trick bonuses (Perfect, Limbo, Close Call, Rooftop, Slam, Flip). It also has magnet, shield and double-score power-ups, distance signs, and a "Your best" sign on the highway at your record distance.
 
 ### Places and abilities
 
@@ -23,7 +23,7 @@ The road winds and climbs ahead of you. Reaching a place for the first time save
 
 ### Performance
 
-The city is merged into a few meshes, coins are drawn in one instanced call, and obstacles are pre-merged, so a typical frame takes about 140 draw calls. The glow is computed at reduced resolution and tone mapping shares the final full-screen pass. If a device can't hold about 50 fps, the render resolution eases down (never below 60%) and climbs back once it has headroom; no effects are switched off.
+The city is merged into a few meshes, coins are drawn in one instanced call, and obstacles are pre-merged, so a typical frame takes about 140 draw calls. The glow is computed at reduced resolution and tone mapping shares the final full-screen pass. If a device can't hold about 50 fps, the render resolution eases down (never below 75%) and climbs back once it has headroom; no effects are switched off.
 
 ### Controls
 
