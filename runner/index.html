@@ -50,7 +50,7 @@ button:focus-visible{outline:3px solid var(--neon);outline-offset:3px}
 .coins.bump{animation:bump .18s}
 @keyframes bump{50%{transform:scale(1.28)}}
 .btns{display:flex;gap:8px;pointer-events:auto}
-.icon-btn{width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,244,232,.22);background:rgba(20,13,43,.5);display:grid;place-items:center;color:var(--paper);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.icon-btn{width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,244,232,.22);background:rgba(20,13,43,.5);display:grid;place-items:center;color:var(--paper);background:rgba(20,13,43,.62)}
 .icon-btn svg{width:20px;height:20px}
 #powers{display:grid;gap:6px;margin-top:10px}
 .pw{display:flex;align-items:center;gap:8px;font-weight:700;font-size:11px;letter-spacing:.16em}
@@ -384,7 +384,7 @@ class Sound {
     this.noise({ type: 'lowpass', f: 1600, f1: 250, dur: .14, vol: .34 * p });
     this.noise({ type: 'highpass', f: 5000, dur: .05, vol: .07 * p });
   }
-  step(pan) { this.noise({ f: 2600, Q: 2.5, dur: .035, vol: .04, pan }); this.tone({ f: 95, f1: 60, dur: .05, vol: .08 }); }
+  step() { this.noise({ f: 1800, Q: 1.2, dur: .045, vol: .06 }); }
   slide() {
     this.noise({ f: 2400, f1: 500, Q: .9, dur: .55, vol: .3, a: .01 });
     this.noise({ type: 'lowpass', f: 500, f1: 200, dur: .5, vol: .2 });
@@ -514,11 +514,10 @@ class Sound {
   arp(t, m) {
     const ctx = this.ctx, f = mtof(m);
     const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f;
-    const o2 = ctx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = f; o2.detune.value = 9;
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200 + 2500 * this.bright; lp.Q.value = 2;
-    const g = ctx.createGain(); this.env(g, t, .003, STEP * .95, .04);
-    o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(this.musicBus); g.connect(this.echo);
-    o.start(t); o2.start(t); o.stop(t + STEP); o2.stop(t + STEP);
+    const g = ctx.createGain(); this.env(g, t, .003, STEP * .95, .05);
+    o.connect(lp); lp.connect(g); g.connect(this.musicBus); g.connect(this.echo);
+    o.start(t); o.stop(t + STEP);
   }
   wallAttach(side) {
     this.noise({ f: 700, f1: 2600, Q: 1.1, dur: .18, vol: .28, pan: side * .7 });
@@ -563,13 +562,13 @@ const sound = new Sound();
    ===================================================================== */
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-const DPR = Math.min(window.devicePixelRatio || 1, isTouch ? 1.5 : 1.75);
+const DPR = Math.min(window.devicePixelRatio || 1, 1.5);
 renderer.setPixelRatio(DPR);
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 const MAX_ANISO = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 
 const scene = new THREE.Scene();
@@ -595,7 +594,7 @@ function bendMaterial(m) {
 function bendObject(o) { o.traverse(c => { if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach(bendMaterial); }); }
 
 // Anti-aliasing: 4x on normal screens, 2x on high-density screens where pixels are already tiny
-const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: isTouch ? 0 : DPR >= 1.2 ? 2 : 4 });
+const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: isTouch ? 0 : 2 });
 const composer = new EffectComposer(renderer, rt);
 composer.setPixelRatio(DPR);
 composer.setSize(innerWidth, innerHeight);
@@ -725,7 +724,7 @@ const hemiLight = new THREE.HemisphereLight('#8ea8e6', '#1a1e33', 1.15); scene.a
 const sunLight = new THREE.DirectionalLight('#ffb48c', 2.7);
 sunLight.position.set(-7, 15, 11); sunLight.target.position.set(0, 0, -6);
 sunLight.castShadow = true;
-sunLight.shadow.mapSize.set(isTouch ? 1024 : 2048, isTouch ? 1024 : 2048);
+sunLight.shadow.mapSize.set(isTouch ? 1024 : 1536, isTouch ? 1024 : 1536);
 Object.assign(sunLight.shadow.camera, { left: -13, right: 13, top: 16, bottom: -16, near: 1, far: 70 });
 sunLight.shadow.bias = -.0004; sunLight.shadow.normalBias = .02;
 scene.add(sunLight, sunLight.target);
@@ -2309,14 +2308,16 @@ function popup(text, cls = '', sub = '') {
 }
 function setHidden(e, v) { if (e.hidden !== v) e.hidden = v; }
 function setWidth(e, f) { const w = Math.round(f * 100) + '%', b = e.querySelector('b'); if (b.style.width !== w) b.style.width = w; }
+let hudClock = 0;
 function updateHUD(dt) {
   if (G.state !== 'play') return;
   G.chainT -= dt;
   if (G.chain > 0 && G.chainT <= 0) loseChain();
+  hudClock += dt; const refresh = hudClock > .066; if (refresh) hudClock = 0;
   const sc = Math.floor(G.score);
-  if (sc !== shown.score) { el.score.textContent = sc.toLocaleString('en-US'); shown.score = sc; }
+  if (refresh && sc !== shown.score) { el.score.textContent = sc.toLocaleString('en-US'); shown.score = sc; }
   const dm = Math.floor(G.D);
-  if (dm !== shown.dist) { el.dist.textContent = `${dm.toLocaleString('en-US')} m · ${Math.round(G.speed * 3.6)} km/h`; shown.dist = dm; }
+  if (refresh && dm !== shown.dist) { el.dist.textContent = `${dm.toLocaleString('en-US')} m · ${Math.round(G.speed * 3.6)} km/h`; shown.dist = dm; }
   if (G.coins !== shown.coins) { el.coins.textContent = G.coins.toLocaleString('en-US'); shown.coins = G.coins; }
   const m = multTotal();
   if (m !== shown.mult) { el.mult.textContent = '×' + m; el.chain.classList.toggle('on', m > 1); shown.mult = m; }
@@ -2514,15 +2515,19 @@ function adaptResolution(ms, now) {
   if (perf.acc < 1000) return;
   const avg = perf.acc / perf.n; perf.acc = 0; perf.n = 0;
   let sc = perf.scale;
-  if (avg > 19.5) { sc = Math.max(.7, sc - .08); perf.dropped = now; }              // missing frames (below ~50 fps)
-  else if (avg < 17.4 && now - perf.dropped > 8000) sc = Math.min(1, sc + .05);    // holding 60+, and no recent drop
-  if (sc !== perf.scale && now - perf.changed > 1500) { perf.scale = sc; perf.changed = now; applyPixelRatio(); }
+  // Each change rebuilds the render buffers (a small hitch), so mid-run it only ever steps down, a few seconds
+  // apart; it climbs back between runs (menu or game-over), where a hitch can't be felt.
+  if (avg > 18.2) { sc = Math.max(.7, sc - .15); perf.dropped = now; }                                  // below ~55 fps
+  else if (avg < 17.2 && G.state !== 'play' && G.state !== 'dead' && now - perf.dropped > 4000) sc = 1;
+  if (sc !== perf.scale && now - perf.changed > 3000) { perf.scale = sc; perf.changed = now; applyPixelRatio(); }
 }
-let last = performance.now();
+let last = performance.now(), frameDt = 1 / 60;
 function frame(now) {
   requestAnimationFrame(frame);
   adaptResolution(now - last, now);
-  const rdt = Math.min((now - last) / 1000, 1 / 20); last = now;
+  const raw = Math.min((now - last) / 1000, 1 / 20); last = now;
+  frameDt += (raw - frameDt) * .3;                        // light smoothing of frame-to-frame timing noise
+  const rdt = raw > frameDt * 1.8 ? raw : frameDt;       // real hitches still pass through, so the game never slows down
   if (G.state !== 'paused') tick(rdt);
   composer.render();
 }
