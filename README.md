@@ -23,7 +23,7 @@ The world curves down over a crest just ahead, so distant pieces stay hidden and
 
 ### Performance
 
-The city is merged into a few meshes, coins are drawn in one instanced call, and obstacles are pre-merged, so a typical frame takes about 140 draw calls. The glow is computed at reduced resolution and tone mapping shares the final full-screen pass. If a device can't hold about 50 fps, the render resolution eases down (never below 75%) and climbs back once it has headroom; no effects are switched off.
+The city is merged into a few meshes, coins are drawn in one instanced call, and obstacles are pre-merged, so a typical frame takes about 140 draw calls. The glow is computed at reduced resolution and tone mapping shares the final full-screen pass. Every shader is compiled during loading, so nothing freezes mid-run. If a device can't hold about 50 fps, the render resolution eases down (never below 70%) and climbs back once it has headroom; no effects are switched off.
 
 ### Controls
 

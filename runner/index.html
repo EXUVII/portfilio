@@ -595,7 +595,7 @@ function bendMaterial(m) {
 function bendObject(o) { o.traverse(c => { if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach(bendMaterial); }); }
 
 // Anti-aliasing: 4x on normal screens, 2x on high-density screens where pixels are already tiny
-const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: isTouch ? 0 : DPR >= 1.5 ? 2 : 4 });
+const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: isTouch ? 0 : DPR >= 1.2 ? 2 : 4 });
 const composer = new EffectComposer(renderer, rt);
 composer.setPixelRatio(DPR);
 composer.setSize(innerWidth, innerHeight);
@@ -656,16 +656,31 @@ function scaleBoxUV(geo, faces, ou = 0, ov = 0) {
 }
 
 /* ----- sky: gradient, low sun, drifting clouds, stars ----- */
+/* Tileable cloud noise, baked once at load; the sky then needs a single texture lookup per pixel. */
+const cloudTex = (() => {
+  const N = 256, data = new Uint8Array(N * N * 4);
+  const rnd = (x, y, p) => { x = ((x % p) + p) % p; y = ((y % p) + p) % p; const h = Math.sin(x * 127.1 + y * 311.7 + p * 17.3) * 43758.5453; return h - Math.floor(h); };
+  const vnoise = (x, y, p) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = rnd(xi, yi, p), b = rnd(xi + 1, yi, p), c = rnd(xi, yi + 1, p), d = rnd(xi + 1, yi + 1, p);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    let v = 0, amp = .5, f = 8;
+    for (let o = 0; o < 4; o++) { v += amp * vnoise(x / N * f, y / N * f, f); f *= 2; amp *= .5; }
+    const i = (y * N + x) * 4; data[i] = data[i + 1] = data[i + 2] = Math.min(255, v * 255); data[i + 3] = 255;
+  }
+  const t = new THREE.DataTexture(data, N, N); t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.needsUpdate = true;
+  return t;
+})();
 const skyMat = new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
-  uniforms: { uTime: { value: 0 }, uFog: { value: FOG.clone() }, uSun: { value: 1 }, uNight: { value: 0 } },
+  uniforms: { uTime: { value: 0 }, uFog: { value: FOG.clone() }, uSun: { value: 1 }, uNight: { value: 0 }, uClouds: { value: cloudTex } },
   vertexShader: `varying vec3 vDir; void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
   fragmentShader: `
-    uniform float uTime, uSun, uNight; uniform vec3 uFog; varying vec3 vDir;
+    uniform float uTime, uSun, uNight; uniform vec3 uFog; uniform sampler2D uClouds; varying vec3 vDir;
     float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-    float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
-      return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
-    float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 4; i++){ v += a * noise(p); p *= 2.03; a *= .5; } return v; }
     void main(){
       vec3 d = normalize(vDir); float h = d.y;
       vec3 sd = normalize(vec3(0., .06, -1.));
@@ -682,7 +697,7 @@ const skyMat = new THREE.ShaderMaterial({
       col += (vec3(1., .42, .2) * pow(sdot, 60.) * .7 + vec3(1., .45, .3) * pow(sdot, 14.) * .16) * uSun * (1. - uNight);
       if (h > 0. && h < .5){
         vec2 cp = d.xz / (h + .12) * 1.4; cp.x += uTime * .012;
-        float c = fbm(cp); c = smoothstep(.52, .86, c) * smoothstep(0., .06, h) * (1. - smoothstep(.22, .5, h));
+        float c = texture2D(uClouds, cp * .125).r; c = smoothstep(.52, .86, c) * smoothstep(0., .06, h) * (1. - smoothstep(.22, .5, h));
         vec3 cc = mix(vec3(.55, .63, .86) * (.5 + pow(az, 4.) * .5) + vec3(1., .5, .3) * pow(az, 8.) * .45, vec3(.07, .11, .27), smoothstep(.03, .3, h));
         col = mix(col, cc + vec3(1., .55, .35) * pow(sdot, 6.) * .55, c * .7);
       }
@@ -1368,6 +1383,7 @@ function podGeo(L) {
   return podGeos[L];
 }
 const podMatSets = podMats.map(m => [m[0], m[2], m[4], metalMat, tealGlow]);
+podMatSets.forEach(set => set.forEach(bendMaterial));   // every colour variant follows the curved world
 function makeBlock(L) {
   const m = new THREE.Mesh(podGeo(L), podMatSets[0]); m.castShadow = m.receiveShadow = true;
   return { mesh: m, kind: 'block', w: POD_W, h: BLOCK_H, len: L };
@@ -2498,7 +2514,7 @@ function adaptResolution(ms, now) {
   if (perf.acc < 1000) return;
   const avg = perf.acc / perf.n; perf.acc = 0; perf.n = 0;
   let sc = perf.scale;
-  if (avg > 19.5) { sc = Math.max(.75, sc - .08); perf.dropped = now; }              // missing frames (below ~50 fps)
+  if (avg > 19.5) { sc = Math.max(.7, sc - .08); perf.dropped = now; }              // missing frames (below ~50 fps)
   else if (avg < 17.4 && now - perf.dropped > 8000) sc = Math.min(1, sc + .05);    // holding 60+, and no recent drop
   if (sc !== perf.scale && now - perf.changed > 1500) { perf.scale = sc; perf.changed = now; applyPixelRatio(); }
 }
@@ -2512,6 +2528,26 @@ function frame(now) {
 }
 
 scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(bendMaterial); });
+/* Warm-up: build one of every obstacle, pod colour, power-up and sign and draw them once off-screen, so
+   every shader (including shadow shaders) is compiled during loading instead of freezing a frame mid-run. */
+(function warmUp() {
+  const temp = [];
+  const hold = o => { o.mesh.position.set(0, 0, -6); o.mesh.traverse(c => { c.frustumCulled = false; }); temp.push(o); };
+  hold(acquire('hurdle', makeHurdle)); hold(acquire('gate', makeGate)); hold(acquire('ramp', makeRamp));
+  podMatSets.forEach((set, i) => { const L = [12, 18, 24][i % 3]; const o = acquire('block' + L, () => makeBlock(L)); o.mesh.material = set; hold(o); });
+  for (const type of ['magnet', 'shield', 'x2']) hold(acquire('pw_' + type, () => makePower(type)));
+  const gt = makeGantry(); gantries.push(gt); gt.mesh.visible = true; gt.mesh.position.z = -6; gt.mesh.traverse(c => { c.frustumCulled = false; });
+  dummy.position.set(0, 1, -6); dummy.rotation.set(0, 0, 0); dummy.scale.setScalar(1); dummy.updateMatrix();
+  coinInst.setMatrixAt(0, dummy.matrix); coinInst.count = 1; coinInst.instanceMatrix.needsUpdate = true;
+  shocks.forEach(q => { q.mesh.visible = true; }); R.shield.visible = true;
+  const target = new THREE.WebGLRenderTarget(64, 64, { type: THREE.HalfFloatType });
+  renderer.setRenderTarget(target); renderer.render(scene, camera); renderer.setRenderTarget(null);
+  composer.render();
+  target.dispose();
+  for (const o of temp) { o.mesh.traverse(c => { c.frustumCulled = true; }); release(o); }
+  gt.mesh.visible = false; gt.mesh.traverse(c => { c.frustumCulled = true; });
+  coinInst.count = 0; shocks.forEach(q => { q.mesh.visible = false; }); R.shield.visible = false;
+})();
 resize();
 resetPlayer();
 updateMenuBest();
