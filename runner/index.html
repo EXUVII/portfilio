@@ -344,7 +344,7 @@ class Sound {
     if (send) { const s = ctx.createGain(); s.gain.value = send; tail.connect(s); s.connect(this.verbSend); }
     return g;
   }
-  env(g, at, a, dur, vol) { g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(Math.max(vol, .0002), at + a); g.gain.exponentialRampToValueAtTime(.0001, at + dur); }
+  env(g, at, a, dur, vol) { g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(Math.max(vol, .0002), at + a); g.gain.exponentialRampToValueAtTime(.0001, at + dur); }
   tone({ type = 'sine', f = 440, f1 = 0, fd = 0, t = 0, at = 0, dur = .2, vol = .3, a = .004, pan = 0, send = 0, dest = null, detune = 0, lp = 0 } = {}) {
     if (!this.ctx) return; const ctx = this.ctx, s = at || ctx.currentTime + t;
     const o = ctx.createOscillator(); o.type = type; o.detune.value = detune;
@@ -365,11 +365,16 @@ class Sound {
   }
 
   /* ----- effects ----- */
+  /* Jump: a sneaker push-off (soft thud, grit and a tiny squeak), a whoosh of air that rises as you lift,
+     and a light rising tone on top for game feel. */
   jump() {
-    this.tone({ f: 170, f1: 520, dur: .16, vol: .3 });
-    this.tone({ type: 'triangle', f: 340, f1: 1100, dur: .12, vol: .09 });
-    this.noise({ f: 900, f1: 3600, Q: .8, dur: .2, vol: .2 });
-    this.tone({ f: 120, f1: 45, dur: .1, vol: .45 });
+    this.tone({ f: 115, f1: 70, dur: .07, vol: .3, a: .003 });
+    this.noise({ type: 'lowpass', f: 1400, f1: 500, dur: .06, vol: .26, a: .002 });
+    this.noise({ f: 3600, Q: 7, dur: .035, vol: .09, a: .002, t: .004 });
+    this.noise({ f: 480, f1: 1900, Q: 1.1, dur: .3, vol: .55, a: .035, send: .12 });
+    this.noise({ type: 'highpass', f: 2600, f1: 5200, dur: .2, vol: .08, a: .03 });
+    this.tone({ f: 392, f1: 784, fd: .11, dur: .16, vol: .09, a: .01 });
+    this.tone({ type: 'triangle', f: 784, f1: 1568, fd: .11, dur: .12, vol: .03, a: .01 });
   }
   flip() {
     if (!this.ctx) return; const ctx = this.ctx, s = ctx.currentTime;
@@ -389,10 +394,37 @@ class Sound {
     this.noise({ type: 'highpass', f: 5000, dur: .05, vol: .07 * p });
   }
   step() { this.noise({ f: 1800, Q: 1.2, dur: .045, vol: .06 }); }
+  /* Slide: the body drops (thud and a cloth swish), then a gritty friction scrape that slows down as the
+     slide runs out. The scrape's loudness is roughened by slow random noise so it sounds like grain on
+     asphalt rather than steady hiss, and it fades out early if the slide is cut short by a jump. */
   slide() {
-    this.noise({ f: 2400, f1: 500, Q: .9, dur: .55, vol: .3, a: .01 });
-    this.noise({ type: 'lowpass', f: 500, f1: 200, dur: .5, vol: .2 });
-    this.tone({ f: 110, f1: 55, dur: .12, vol: .28 });
+    if (!this.ctx) return; const ctx = this.ctx, s = ctx.currentTime, T = SLIDE_T;
+    this.tone({ f: 88, f1: 52, dur: .09, vol: .22, a: .003 });
+    this.noise({ type: 'lowpass', f: 900, f1: 280, dur: .1, vol: .2, a: .003 });
+    this.noise({ type: 'highpass', f: 3200, f1: 1600, dur: .14, vol: .07, a: .01 });
+    this.endSlide(0);
+    const src = ctx.createBufferSource(); src.buffer = this.noiseBuf; src.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.1;
+    bp.frequency.setValueAtTime(1500, s); bp.frequency.exponentialRampToValueAtTime(650, s + T);
+    const lo = ctx.createBiquadFilter(); lo.type = 'lowpass'; lo.frequency.value = 380;
+    const body = ctx.createGain(); body.gain.value = .55;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(.12, s + .025);
+    g.gain.setValueAtTime(.12, s + T * .45); g.gain.exponentialRampToValueAtTime(.0001, s + T + .08);
+    const grit = ctx.createBufferSource(); grit.buffer = this.noiseBuf; grit.loop = true; grit.playbackRate.value = .004;
+    const gritAmt = ctx.createGain(); gritAmt.gain.value = .9;                          // slow random wobble of the level
+    const vca = ctx.createGain(); vca.gain.value = 1;
+    grit.connect(gritAmt); gritAmt.connect(vca.gain);
+    src.connect(bp); bp.connect(vca); src.connect(lo); lo.connect(body); body.connect(vca);
+    vca.connect(g); g.connect(this.out(0, .06));
+    const off = Math.random() * 1.5; src.start(s, off); grit.start(s, Math.random() * 1.5);
+    src.stop(s + T + .12); grit.stop(s + T + .12);
+    this.slideVoice = { g, src, grit };
+  }
+  endSlide(fade = .05) {
+    const v = this.slideVoice; if (!v || !this.ctx) return; this.slideVoice = null;
+    const t = this.ctx.currentTime; v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(0, t, Math.max(fade, .005) / 3);
+    try { v.src.stop(t + fade + .05); v.grit.stop(t + fade + .05); } catch (e) { /* already stopped */ }
   }
   lane(dir) { this.noise({ f: 450, f1: 2600, Q: 1.3, dur: .13, vol: .24, pan: dir * .55 }); }
   wall(dir) { this.tone({ type: 'square', f: 140, f1: 90, dur: .08, vol: .07, lp: 900, pan: dir * .6 }); }
@@ -1972,6 +2004,7 @@ function tryJump() {
   return false;
 }
 function doJump() {
+  if (P.sliding > 0) sound.endSlide();
   P.vy = JUMP_V; P.grounded = false; P.coyote = 0; P.jumps = 1; P.sliding = 0; P.syV += 7; P.jumpD = G.D; P.jumpSide *= -1; P.groundObj = null;
   sound.jump(); burstDust(P.x, P.y, P.z, 10, 1); vibrate(8);
 }
@@ -2821,7 +2854,7 @@ const playBtn = $('btn-play');
 playBtn.disabled = false;
 playBtn.innerHTML = 'Run <kbd>Enter</kbd>';
 requestAnimationFrame(frame);
-window.__game = { G, P, R, startRun, moveLane, pressUp, pressDown, tick, camera, composer, renderer, gapAt, wallAt, zoneAt, save, BEND, perf, adaptResolution };
+window.__game = { G, P, R, sound, startRun, moveLane, pressUp, pressDown, tick, camera, composer, renderer, gapAt, wallAt, zoneAt, save, BEND, perf, adaptResolution };
 })();
 </script>
 </body>
