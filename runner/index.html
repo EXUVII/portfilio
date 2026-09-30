@@ -1131,48 +1131,157 @@ const R = {};
 {
   const suit = new THREE.MeshStandardMaterial({ color: '#f1ece6', roughness: .42, metalness: .08 });
   const dark = new THREE.MeshStandardMaterial({ color: '#241c38', roughness: .55, metalness: .35 });
+  const trim = new THREE.MeshStandardMaterial({ color: '#9794b0', roughness: .32, metalness: .7 });
   const accent = new THREE.MeshStandardMaterial({ color: '#ff6a3d', emissive: '#ff5a2a', emissiveIntensity: 2.2, roughness: .4 });
   const soleMat = new THREE.MeshStandardMaterial({ color: '#3a2c3c', roughness: .85 });
   const visor = new THREE.MeshStandardMaterial({ color: '#07070f', emissive: '#46f0e0', emissiveIntensity: 3.4, roughness: .15, metalness: .6 });
-  const M = (geo, mat) => { const m = new THREE.Mesh(geo, mat); m.castShadow = mat !== accent && mat !== visor && mat !== soleMat; return m; };
-  const cap = (r, l) => new THREE.CapsuleGeometry(r, l, 4, 10);
+  const scarfMat = new THREE.MeshStandardMaterial({ color: '#ff3d6e', emissive: '#ff2a55', emissiveIntensity: .22, roughness: .75, side: THREE.DoubleSide });
+  const casts = mat => mat === suit || mat === dark || mat === scarfMat;   // small trim and glow parts sit inside the body's shadow anyway
+  const cap = (r, l) => new THREE.CapsuleGeometry(r, l, 4, 10), box = (x, y, z) => new THREE.BoxGeometry(x, y, z);
+  const cyl = (r0, r1, h, n = 12) => new THREE.CylinderGeometry(r0, r1, h, n), ball = (r, w = 12, h = 8) => new THREE.SphereGeometry(r, w, h);
+  const dome = (r, w = 14, h = 6) => new THREE.SphereGeometry(r, w, h, 0, Math.PI * 2, 0, Math.PI / 2);
+  // add(parent, geometry, material, [x, y, z], [rx, ry, rz], [sx, sy, sz])
+  const add = (parent, geo, mat, p = [0, 0, 0], r = [0, 0, 0], sc = [1, 1, 1]) => {
+    const m = new THREE.Mesh(geo, mat); m.position.set(...p); m.rotation.set(...r); m.scale.set(...sc); parent.add(m); return m;
+  };
   R.root = new THREE.Group(); R.squash = new THREE.Group(); R.pivot = new THREE.Group(); R.rig = new THREE.Group();
   R.root.add(R.squash); R.squash.add(R.pivot); R.pivot.position.y = .95; R.pivot.add(R.rig); R.rig.position.y = -.95;
   R.hips = new THREE.Group(); R.hips.position.y = .95; R.rig.add(R.hips);
-  const pelvis = M(cap(.16, .14), dark); pelvis.rotation.z = Math.PI / 2; R.hips.add(pelvis);
+  add(R.hips, cap(.16, .14), dark, [0, 0, 0], [0, 0, Math.PI / 2]);
+  for (const s of [-1, 1]) add(R.hips, box(.05, .14, .17), trim, [s * .205, -.03, 0], [0, 0, s * .12]);
+
   R.torso = new THREE.Group(); R.hips.add(R.torso);
-  const chest = M(cap(.22, .32), suit); chest.position.y = .36; chest.scale.set(1.1, 1, .82); R.torso.add(chest);
-  const belt = M(new THREE.CylinderGeometry(.2, .2, .07, 14), accent); belt.position.y = .1; belt.scale.z = .8; R.torso.add(belt);
-  const pack = M(new THREE.BoxGeometry(.32, .36, .14), dark); pack.position.set(0, .4, .2); R.torso.add(pack);
-  for (const s of [-1, 1]) { const l = M(new THREE.BoxGeometry(.05, .26, .02), accent); l.position.set(s * .09, .4, .275); R.torso.add(l); }
-  const packCore = M(new THREE.CylinderGeometry(.05, .05, .03, 12), visor); packCore.rotation.x = Math.PI / 2; packCore.position.set(0, .47, .28); R.torso.add(packCore);
+  const T = R.torso;
+  add(T, cap(.165, .1), dark, [0, .17, 0], [0, 0, 0], [1.05, 1, .8]);                          // abdomen
+  add(T, cap(.22, .2), suit, [0, .4, 0], [0, 0, 0], [1.12, 1, .82]);                            // chest
+  add(T, dome(.19, 18, 8), trim, [0, .43, -.12], [-Math.PI / 2, 0, 0], [1.02, .4, 1]);         // chest plate
+  for (const s of [-1, 1]) add(T, box(.13, .024, .02), accent, [s * .056, .36, -.2], [0, 0, s * .5]); // chevron
+  add(T, cyl(.2, .2, .07, 16), accent, [0, .1, 0], [0, 0, 0], [1, 1, .8]);                      // belt
+  add(T, box(.085, .06, .03), trim, [0, .1, -.165]);                                            // buckle
+  add(T, new THREE.TorusGeometry(.118, .045, 8, 18), scarfMat, [0, .6, .005], [Math.PI / 2 - .12, 0, 0]); // scarf wrap
+  // backpack: body, rounded top, light strips, core, vents and two thrusters
+  add(T, box(.3, .32, .13), dark, [0, .41, .2]);
+  add(T, cyl(.065, .065, .3, 12), dark, [0, .57, .2], [0, 0, Math.PI / 2]);
+  for (const s of [-1, 1]) add(T, box(.04, .24, .02), accent, [s * .1, .41, .272]);
+  add(T, cyl(.05, .05, .03, 14), visor, [0, .47, .275], [Math.PI / 2, 0, 0]);
+  for (let i = 0; i < 3; i++) add(T, box(.1, .014, .014), trim, [0, .38 - i * .035, .27]);
+  for (const s of [-1, 1]) {
+    add(T, cyl(.042, .055, .1, 12), trim, [s * .1, .22, .21]);
+    add(T, cyl(.036, .036, .012, 12), visor, [s * .1, .166, .21]);
+  }
+
   R.head = new THREE.Group(); R.head.position.y = .66; R.torso.add(R.head);
-  const helmet = M(new THREE.SphereGeometry(.19, 20, 16), suit); helmet.position.y = .16; R.head.add(helmet);
-  const face = M(new THREE.BoxGeometry(.28, .1, .12), visor); face.position.set(0, .18, -.13); R.head.add(face);
-  const fin = M(new THREE.BoxGeometry(.04, .07, .26), accent); fin.position.set(0, .35, .02); R.head.add(fin);
+  const H = R.head;
+  add(H, cyl(.062, .075, .12, 10), dark, [0, .02, 0]);                                          // neck
+  add(H, ball(.19, 24, 16), suit, [0, .16, 0]);                                                  // helmet
+  add(H, new THREE.SphereGeometry(.199, 28, 8, Math.PI * 1.5 - .95, 1.9, Math.PI / 2 - .34, .52), visor, [0, .16, 0]); // wraparound visor
+  add(H, box(.14, .05, .07), dark, [0, .035, -.13]);                                            // chin guard
+  add(H, box(.04, .07, .26), accent, [0, .35, .02]);                                            // crest
+  for (const s of [-1, 1]) {
+    add(H, cyl(.066, .066, .06, 16), trim, [s * .186, .15, .01], [0, 0, Math.PI / 2]);          // ear pods
+    add(H, cyl(.044, .044, .072, 16), accent, [s * .186, .15, .01], [0, 0, Math.PI / 2]);
+  }
+  add(H, cyl(.007, .007, .2, 5), dark, [.2, .3, .05], [0, 0, -.15]);                            // antenna
+  add(H, ball(.02, 8, 6), accent, [.215, .4, .05]);
+
   const limbArm = (side) => {
     const sh = new THREE.Group(); sh.position.set(side * .3, .55, 0); R.torso.add(sh);
-    const up = M(cap(.07, .2), suit); up.position.y = -.15; sh.add(up);
+    add(sh, dome(.105), trim, [0, .01, 0], [0, 0, -side * .35], [1, .85, 1.1]);                // shoulder pad
+    add(sh, cap(.07, .2), suit, [0, -.15, 0]);
     const el = new THREE.Group(); el.position.y = -.32; sh.add(el);
-    const fo = M(cap(.062, .18), suit); fo.position.y = -.13; el.add(fo);
-    const band = M(new THREE.CylinderGeometry(.068, .068, .05, 10), accent); band.position.y = -.06; el.add(band);
-    const glove = M(new THREE.SphereGeometry(.075, 10, 8), dark); glove.position.y = -.3; el.add(glove);
+    add(el, ball(.066, 10, 8), dark, [0, 0, .015]);                                             // elbow pad
+    add(el, cap(.062, .18), suit, [0, -.13, 0]);
+    add(el, cyl(.069, .069, .05, 12), accent, [0, -.22, 0]);                                    // wrist band
+    add(el, box(.085, .1, .065), dark, [0, -.31, 0]);                                           // glove
+    add(el, box(.08, .065, .055), dark, [0, -.37, -.018], [.6, 0, 0]);                         // curled fingers
+    add(el, cap(.022, .04), dark, [-side * .045, -.3, -.035], [0, 0, side * .5]);               // thumb
     return { sh, el };
   };
   const limbLeg = (side) => {
     const hp = new THREE.Group(); hp.position.set(side * .12, -.04, 0); R.hips.add(hp);
-    const th = M(cap(.095, .26), dark); th.position.y = -.2; hp.add(th);
+    add(hp, cap(.095, .26), dark, [0, -.2, 0]);
+    add(hp, box(.035, .17, .12), trim, [side * .1, -.19, 0]);                                    // thigh plate
     const kn = new THREE.Group(); kn.position.y = -.43; hp.add(kn);
-    const shin = M(cap(.08, .26), suit); shin.position.y = -.2; kn.add(shin);
+    add(kn, ball(.078, 12, 8), trim, [0, -.02, -.055], [0, 0, 0], [1, 1.15, .7]);               // knee pad
+    add(kn, cap(.08, .26), suit, [0, -.2, 0]);
+    add(kn, box(.09, .2, .035), dark, [0, -.22, -.078]);                                         // shin guard
+    add(kn, cyl(.078, .085, .06, 12), dark, [0, -.4, 0]);                                        // shoe collar
     const an = new THREE.Group(); an.position.y = -.44; kn.add(an);
-    const foot = M(new THREE.BoxGeometry(.14, .1, .3), dark); foot.position.set(0, 0, -.05); an.add(foot);
-    const sole = M(new THREE.BoxGeometry(.15, .03, .31), soleMat); sole.position.set(0, -.05, -.05); an.add(sole);
+    add(an, box(.14, .1, .22), dark, [0, 0, -.02]);                                               // shoe upper
+    add(an, ball(.075, 12, 8), dark, [0, -.012, -.135], [0, 0, 0], [.95, .65, 1.1]);            // toe box
+    add(an, box(.146, .03, .11), suit, [0, .012, -.04], [-.35, 0, 0]);                           // strap
+    add(an, box(.06, .07, .03), trim, [0, .06, .1]);                                              // heel tab
+    add(an, box(.155, .035, .33), soleMat, [0, -.056, -.055]);                                    // sole
+    add(an, box(.16, .012, .31), accent, [0, -.046, -.055]);                                      // glowing sole line
     return { hp, kn, an };
   };
   R.armL = limbArm(-1); R.armR = limbArm(1); R.legL = limbLeg(-1); R.legR = limbLeg(1);
+
+  /* Merge the static parts of each bone into one mesh per material: about 60 parts become ~30 draws. */
+  const bake = g => {
+    const byMat = new Map();
+    for (const c of [...g.children]) {
+      if (!c.isMesh) continue;
+      c.updateMatrix(); const geo = c.geometry.clone().applyMatrix4(c.matrix);
+      if (!byMat.has(c.material)) byMat.set(c.material, []);
+      byMat.get(c.material).push(geo); g.remove(c);
+    }
+    for (const [mat, geos] of byMat) { const m = new THREE.Mesh(mergeGeometries(geos), mat); m.castShadow = casts(mat); g.add(m); }
+  };
+  [R.hips, R.torso, R.head, R.armL.sh, R.armL.el, R.armR.sh, R.armR.el,
+   R.legL.hp, R.legL.kn, R.legL.an, R.legR.hp, R.legR.kn, R.legR.an].forEach(bake);
+
+  /* Scarf tail: a ribbon in world space. Each point follows where the neck was a moment ago, carried back
+     by the wind, so it streams behind, ripples, lags behind jumps and swirls round during flips and rolls. */
+  const N = 14, pos = new Float32Array(N * 2 * 3), idx = [];
+  for (let i = 0; i < N - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage)); geo.setIndex(idx);
+  const mesh = new THREE.Mesh(geo, scarfMat); mesh.castShadow = true; mesh.frustumCulled = false; scene.add(mesh);
+  R.scarf = { N, seg: .085, pts: Array.from({ length: N }, () => new THREE.Vector3()), hist: [],
+    geo, pos, mesh, t: 0, init: false, anchor: new THREE.Vector3(), side: new THREE.Vector3(), tmp: new THREE.Vector3() };
+
   R.shield = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 20), fresnelMat('#53f0de', 1.6));
   R.shield.position.y = .95; R.shield.visible = false; R.root.add(R.shield);
   scene.add(R.root);
+}
+function updateScarf(dt) {
+  const S = R.scarf, pts = S.pts, H = S.hist;
+  R.root.updateMatrixWorld(true);
+  S.anchor.set(0, .7, .12).applyMatrix4(R.torso.matrixWorld);
+  S.side.set(1, 0, 0).transformDirection(R.torso.matrixWorld);
+  if (!S.init) { H.length = 0; S.init = true; }
+  S.t += dt;
+  H.push({ t: S.t, x: S.anchor.x, y: S.anchor.y, z: S.anchor.z }); if (H.length > 90) H.shift();
+  const flow = P.dead ? 1.2 : 4 + G.speed * .16, droop = P.dead ? .9 : .3, t = S.t;
+  let k = H.length - 1;
+  for (let i = 0; i < S.N; i++) {
+    const f = i / (S.N - 1), sl = i * S.seg, tt = t - sl / flow;
+    while (k > 0 && H[k].t > tt) k--;                                   // anchor position at time tt
+    const A = H[k], B = H[Math.min(k + 1, H.length - 1)], u = B.t > A.t ? clamp((tt - A.t) / (B.t - A.t), 0, 1) : 0;
+    pts[i].set(lerp(A.x, B.x, u) + Math.sin(t * 9 - i * .55) * .06 * f,
+               lerp(A.y, B.y, u) - sl * sl * droop * 1.3 + Math.sin(t * 15 - i * .8) * .07 * f,
+               lerp(A.z, B.z, u) + sl);
+  }
+  pts[0].copy(S.anchor);
+  for (let i = 1; i < S.N; i++) {                                        // keep every link the same length
+    const p = pts[i], a = pts[i - 1], dx = p.x - a.x, dy = p.y - a.y, dz = p.z - a.z, L = Math.hypot(dx, dy, dz) || 1, c = S.seg / L;
+    p.set(a.x + dx * c, a.y + dy * c, a.z + dz * c);
+  }
+  const sd = S.side, kd = S.tmp;
+  for (let i = 0; i < S.N; i++) {
+    // the cloth twists a little along its length, so it still shows its face when seen from the side
+    const p = pts[i], q = pts[Math.min(i + 1, S.N - 1)], r = pts[Math.max(i - 1, 0)], o = i * 6, f = i / (S.N - 1);
+    kd.set(q.x - r.x, q.y - r.y, q.z - r.z).normalize();
+    const th = Math.sin(S.t * 6 - i * .45) * .9 * f, c = Math.cos(th), sn = Math.sin(th), kv = kd.dot(sd);
+    const vx = sd.x * c + (kd.y * sd.z - kd.z * sd.y) * sn + kd.x * kv * (1 - c);
+    const vy = sd.y * c + (kd.z * sd.x - kd.x * sd.z) * sn + kd.y * kv * (1 - c);
+    const vz = sd.z * c + (kd.x * sd.y - kd.y * sd.x) * sn + kd.z * kv * (1 - c);
+    const w = .065 * (1 - .4 * f);
+    S.pos[o] = p.x - vx * w; S.pos[o + 1] = p.y - vy * w; S.pos[o + 2] = p.z - vz * w;
+    S.pos[o + 3] = p.x + vx * w; S.pos[o + 4] = p.y + vy * w; S.pos[o + 5] = p.z + vz * w;
+  }
+  S.geo.attributes.position.needsUpdate = true; S.geo.computeVertexNormals();
+  S.mesh.visible = R.rig.visible;
 }
 function fresnelMat(color, strength = 1.8) {
   return new THREE.ShaderMaterial({
@@ -1188,15 +1297,24 @@ function fresnelMat(color, strength = 1.8) {
 }
 
 /* ----- poses (radians). Forward is -z; positive hip angle swings a leg forward ----- */
-const POSE_KEYS = ['torso', 'twist', 'roll', 'head', 'hipL', 'hipR', 'kneeL', 'kneeR', 'shL', 'shR', 'elL', 'elR', 'outL', 'outR', 'hipsY'];
+const POSE_KEYS = ['torso', 'twist', 'roll', 'head', 'hipL', 'hipR', 'kneeL', 'kneeR', 'shL', 'shR', 'elL', 'elR', 'outL', 'outR', 'hipsY', 'sway'];
 const SLIDE_POSE = { torso: .95, twist: .15, head: -.6, hipL: 1.5, hipR: 1.0, kneeL: -.1, kneeR: -1.9, shL: .7, shR: -.9, elL: .5, elR: .2, outL: .5, outR: .75, hipsY: .42 };
 const TUCK_POSE = { torso: -.75, twist: 0, head: -.35, hipL: 2.1, hipR: 2.1, kneeL: -2.4, kneeR: -2.4, shL: 1.1, shR: 1.1, elL: 1.9, elR: 1.9, outL: .2, outR: .2, hipsY: .95 };
 const DIVE_POSE = { torso: -.35, twist: 0, head: .35, hipL: .05, hipR: -.05, kneeL: -.15, kneeR: -.15, shL: 2.9, shR: 2.9, elL: .15, elR: .15, outL: .3, outR: .3, hipsY: .95 };
 const JUMP_POSE = { torso: -.18, twist: -.1, head: .25, hipL: 1.5, hipR: -.35, kneeL: -2.0, kneeR: -.6, shL: -.8, shR: 2.2, elL: .6, elR: .4, outL: .3, outR: .2, hipsY: .95 };
 const FALL_POSE = { torso: -.08, twist: 0, head: .2, hipL: .75, hipR: .35, kneeL: -.95, kneeR: -.45, shL: .5, shR: .4, elL: .5, elR: .5, outL: 1.1, outR: 1.1, hipsY: .95 };
 const LIMP_POSE = { torso: .2, twist: 0, head: .1, hipL: .25, hipR: .45, kneeL: -.3, kneeR: -.5, shL: .3, shR: .2, elL: .3, elR: .4, outL: 1.3, outR: 1.1, hipsY: .95 };
-const pose = { torso: -.25, twist: 0, roll: 0, head: .15, hipL: 0, hipR: 0, kneeL: -.3, kneeR: -.3, shL: 0, shR: 0, elL: 1.2, elR: 1.2, outL: .12, outR: .12, hipsY: .95 };
+const pose = { torso: -.25, twist: 0, roll: 0, head: .15, hipL: 0, hipR: 0, kneeL: -.3, kneeR: -.3, shL: 0, shR: 0, elL: 1.2, elR: 1.2, outL: .12, outR: .12, hipsY: .95, sway: 0 };
 const fin = { ...pose };
+const poseV = {}; for (const key of POSE_KEYS) poseV[key] = 0;
+/* Critically damped spring, solved exactly so it is stable at any frame time. Unlike a plain exponential
+   ease it carries velocity, so a pose change never starts with a jolt and one move flows into the next. */
+function springTo(obj, vel, key, target, w, dt) {
+  const y = obj[key] - target, j = vel[key] + w * y, e = Math.exp(-w * dt);
+  obj[key] = target + (y + j * dt) * e;
+  vel[key] = (vel[key] - w * j * dt) * e;
+}
+const runWS = { w: 0 }, runWV = { w: 0 };
 function mirrorPose(p) { const m = { ...p }; for (const [a, b] of [['hipL', 'hipR'], ['kneeL', 'kneeR'], ['shL', 'shR'], ['elL', 'elR'], ['outL', 'outR']]) { m[a] = p[b]; m[b] = p[a]; } m.twist = -p.twist; return m; }
 const JUMP_POSE_M = mirrorPose(JUMP_POSE);
 
@@ -1492,7 +1610,7 @@ function resetPlayer() {
     groundObj: null, jumpSide: 1,
     wall: 0, wallT: 0, wallBuf: 0, wallBufSide: 0, wallUsed: false, xTarget: null, wjSide: 0, falling: false, fell: false, rollBase: 0
   });
-  R.root.position.set(0, 0, 0); R.pivot.rotation.set(0, 0, 0); R.rig.rotation.set(0, 0, 0); R.rig.visible = true; R.shield.visible = false;
+  R.root.position.set(0, 0, 0); R.pivot.rotation.set(0, 0, 0); R.rig.rotation.set(0, 0, 0); R.rig.visible = true; R.shield.visible = false; R.scarf.init = false;
   trail.hist.length = 0;
 }
 const speedK = () => clamp((G.speed - START_SPEED) / (MAX_SPEED - START_SPEED), 0, 1);
@@ -1995,6 +2113,7 @@ function runPose(ph, k) {
   RUN.roll = .035 * s;
   RUN.head = -RUN.torso * .75;
   RUN.hipsY = .935 - lerp(.065, .04, k) * .5 * (1 + Math.cos(2 * (ph - Math.PI / 2 - .8)));
+  RUN.sway = .022 * s;                                  // weight shifts over the stance foot
   return RUN;
 }
 let runW = 0;
@@ -2026,20 +2145,21 @@ function animateRunner(dt) {
     else if (P.vy > 1.5) { src = P.jumpSide > 0 ? JUMP_POSE : JUMP_POSE_M; rate = 16; }
     else { src = FALL_POSE; rate = 9; }
   } else src = run;
-  for (const key of POSE_KEYS) pose[key] = damp(pose[key], src[key] ?? 0, rate, dt);
-  runW = damp(runW, running ? 1 : 0, running ? 12 : 30, dt);
+  for (const key of POSE_KEYS) springTo(pose, poseV, key, src[key] ?? 0, rate * 1.9, dt);
+  springTo(runWS, runWV, 'w', running ? 1 : 0, running ? 20 : 44, dt);
+  runW = clamp(runWS.w, 0, 1);
   for (const key of POSE_KEYS) fin[key] = lerp(pose[key], run[key], runW);
   if (P.landT > 0 && !P.dead) {
-    const L = P.landT * P.landT * (3 - 2 * P.landT);
+    const u = 1 - P.landT, L = u < .16 ? smooth01(0, .16, u) : 1 - smooth01(.16, 1, u);
     fin.hipsY -= .24 * L; fin.kneeL -= .9 * L; fin.kneeR -= .9 * L; fin.hipL += .45 * L; fin.hipR += .45 * L; fin.torso -= .35 * L; fin.outL += .4 * L; fin.outR += .4 * L;
-    P.landT = Math.max(0, P.landT - dt * 5);
+    P.landT = Math.max(0, P.landT - dt * 3.6);
   }
   if (P.stumbleT > 0) {
     const st = P.stumbleT; fin.twist += Math.sin(G.time * 40) * .35 * st; fin.torso += .3 * st; fin.outL += .8 * st; fin.outR += .8 * st;
     P.stumbleT -= dt;
   }
-  R.torso.rotation.set(fin.torso, fin.twist, fin.roll); R.hips.rotation.y = -fin.twist * .5;
-  R.head.rotation.x = fin.head; R.head.rotation.y = -fin.twist * .7; R.hips.position.y = fin.hipsY;
+  R.torso.rotation.set(fin.torso, fin.twist, fin.roll); R.hips.rotation.set(0, -fin.twist * .5, -fin.sway * 2.5);
+  R.head.rotation.set(fin.head, -fin.twist * .7, -fin.roll * .8); R.hips.position.set(fin.sway, fin.hipsY, 0);
   R.legL.hp.rotation.x = fin.hipL; R.legR.hp.rotation.x = fin.hipR; R.legL.kn.rotation.x = fin.kneeL; R.legR.kn.rotation.x = fin.kneeR;
   // Feet flatten for a heel-first landing when the leg reaches forward, and follow the shin
   // (toe pointing down) when the leg is behind, which reads as pushing off.
@@ -2051,13 +2171,14 @@ function animateRunner(dt) {
   if (!P.dead) {
     if (P.flipT >= 0) {
       P.flipT += dt / FLIP_T * (P.slam ? 2.2 : 1);
-      const e = 1 - Math.pow(1 - Math.min(P.flipT, 1), 2.4);
+      const ft = Math.min(P.flipT, 1), e = lerp(ft * ft * (3 - 2 * ft), 1 - Math.pow(1 - ft, 2.4), .55);
       R.pivot.rotation.x = -e * Math.PI * 2;
       if (P.flipT >= 1) { P.flipT = -1; R.pivot.rotation.x = 0; }
     } else R.pivot.rotation.x = damp(wrapAngle(R.pivot.rotation.x), 0, 14, dt);
     if (P.rollT >= 0) {
       P.rollT += dt / ROLL_T;
-      R.pivot.rotation.z = P.rollBase - P.rollDir * easeOutCubic(Math.min(1, P.rollT)) * Math.PI * 2;
+      const rt = Math.min(1, P.rollT);
+      R.pivot.rotation.z = P.rollBase - P.rollDir * lerp(rt * rt * (3 - 2 * rt), easeOutCubic(rt), .55) * Math.PI * 2;
       if (P.rollT >= 1) { P.rollT = -1; R.pivot.rotation.z = wrapAngle(P.rollBase); }
     } else R.pivot.rotation.z = damp(wrapAngle(R.pivot.rotation.z), P.wall ? P.wall * WALL_TILT : 0, P.wall ? 12 : 14, dt);
     R.rig.rotation.z = damp(R.rig.rotation.z, clamp(-P.vx * .03, -.35, .35), 12, dt);
@@ -2072,6 +2193,7 @@ function animateRunner(dt) {
   R.rig.visible = P.invuln > 0 ? Math.floor(G.rtime * 20) % 2 === 0 : true;
   R.shield.visible = !!P.shield && !P.dead;
   if (R.shield.visible) { R.shield.material.uniforms.uTime.value = G.rtime; R.shield.scale.setScalar(1 + Math.sin(G.rtime * 6) * .03); }
+  updateScarf(dt);
 }
 
 function updateObstacles(dt) {
