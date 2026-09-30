@@ -622,6 +622,9 @@ const finalPass = new ShaderPass({
       vec2 off = c * uCA * (.4 + r * 2.5);
       vec3 col = vec3(texture2D(tDiffuse, vUv + off).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - off).b);
       col = ssSRGB(ssAces(col));
+      float lum = dot(col, vec3(.2126, .7152, .0722));
+      col = mix(vec3(lum), col, 1.1);                        // a touch more colour
+      col = mix(col, col * col * (3. - 2. * col), .22);       // gentle contrast curve
       col *= 1. - uVig * r * 1.6;
       float n = fract(sin(dot(vUv * vec2(1920., 1080.) + uTime * 61., vec2(12.9898, 78.233))) * 43758.5453);
       col += (n - .5) * .022;
@@ -632,10 +635,10 @@ const finalPass = new ShaderPass({
 composer.addPass(finalPass);
 
 /* ----- textures drawn in code ----- */
-function canvasTex(w, h, draw, { repeat = true } = {}) {
+function canvasTex(w, h, draw, { repeat = true, srgb = true } = {}) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   draw(c.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = MAX_ANISO;
+  const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = MAX_ANISO;
   if (repeat) t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return t;
 }
@@ -724,17 +727,47 @@ function drawRoadLines(g, w, h, col) {
   for (const lx of [-LANE_W / 2, LANE_W / 2]) g.fillRect(px(lx) - 4, 0, 8, h * .55);
   for (const ex of [-HALF_ROAD + .35, HALF_ROAD - .35]) g.fillRect(px(ex) - 5, 0, 10, h);
 }
-const roadMap = canvasTex(512, 512, (g, w, h) => {
-  g.fillStyle = '#2b2442'; g.fillRect(0, 0, w, h);
-  const id = g.getImageData(0, 0, w, h);
-  for (let i = 0; i < id.data.length; i += 4) { const n = (Math.random() - .5) * 22; id.data[i] += n; id.data[i + 1] += n; id.data[i + 2] += n * 1.2; }
+/* Road surface: fine grain, soft stains, darker polished tyre tracks in each lane and slightly worn paint.
+   Nothing distinctive repeats, so the 8 m tile never reads as a pattern at speed. The roughness map keeps
+   the painted lines a little smoother than the asphalt. */
+const ROAD_PX = 1024, roadU = ROAD_PX / ROAD_W, roadX = x => (x / ROAD_W + .5) * ROAD_PX;
+const roadLines = [];
+for (const lx of [-LANE_W / 2, LANE_W / 2]) roadLines.push([roadX(lx) - .07 * roadU, 0, .14 * roadU, ROAD_PX * .55]);
+for (const ex of [-HALF_ROAD + .35, HALF_ROAD - .35]) roadLines.push([roadX(ex) - .09 * roadU, 0, .18 * roadU, ROAD_PX]);
+const roadWear = [];
+for (let i = 0; i < 1100; i++) { const L = pick(roadLines); roadWear.push([L[0] + Math.random() * L[2], L[1] + Math.random() * L[3], rand(1, 2.2)]); }
+function paintRoadLines(g, col, wear) {
+  g.fillStyle = col; for (const L of roadLines) g.fillRect(...L);
+  g.fillStyle = wear; for (const w of roadWear) g.fillRect(w[0], w[1], w[2], w[2]);
+}
+function tyreTracks(g, col) {
+  for (const cx of [-LANE_W, 0, LANE_W]) for (const off of [-.55, .55]) {
+    const x = roadX(cx + off), hw = .2 * roadU, gr = g.createLinearGradient(x - hw, 0, x + hw, 0);
+    gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.5, col); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x - hw, 0, hw * 2, ROAD_PX);
+  }
+}
+const roadMap = canvasTex(ROAD_PX, ROAD_PX, (g, w, h) => {
+  g.fillStyle = '#2a2540'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 70; i++) {
+    const x = rand(0, w), y = rand(0, h), r = rand(30, 140), dark = Math.random() < .7;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, dark ? `rgba(10,8,20,${rand(.06, .14)})` : `rgba(90,80,110,${rand(.03, .07)})`); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  tyreTracks(g, 'rgba(12,10,22,.28)');
+  const id = g.getImageData(0, 0, w, h), a = id.data;
+  for (let i = 0; i < a.length; i += 4) { const n = (Math.random() - .5) * 26 + (Math.random() < .02 ? 18 : 0); a[i] += n; a[i + 1] += n; a[i + 2] += n * 1.15; }
   g.putImageData(id, 0, 0);
-  g.strokeStyle = 'rgba(10,6,20,.5)'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, h * .5); g.lineTo(w, h * .5 + 6); g.stroke();
-  for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(10,6,20,${rand(.05, .18)})`; g.beginPath(); g.ellipse(rand(0, w), rand(0, h), rand(6, 30), rand(3, 12), rand(0, 3), 0, 7); g.fill(); }
-  drawRoadLines(g, w, h, 'rgba(255,240,220,.85)');
+  g.strokeStyle = 'rgba(10,6,20,.45)'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, h * .5); g.lineTo(w, h * .5 + 8); g.stroke();
+  paintRoadLines(g, 'rgba(250,238,222,.9)', 'rgba(42,37,64,.85)');
 });
-const roadEmit = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); drawRoadLines(g, w, h, '#fff'); });
-const roadMat = new THREE.MeshStandardMaterial({ map: roadMap, emissiveMap: roadEmit, emissive: '#6ff5e6', emissiveIntensity: .38, roughness: .58, metalness: .08 });
+const roadEmit = canvasTex(ROAD_PX, ROAD_PX, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); paintRoadLines(g, '#fff', '#000'); });
+const roadRough = canvasTex(ROAD_PX, ROAD_PX, (g, w, h) => {
+  g.fillStyle = 'rgb(0,178,0)'; g.fillRect(0, 0, w, h);
+  paintRoadLines(g, 'rgb(0,150,0)', 'rgb(0,178,0)');
+}, { srgb: false });
+const roadMat = new THREE.MeshStandardMaterial({ map: roadMap, emissiveMap: roadEmit, emissive: '#6ff5e6', emissiveIntensity: .38, roughnessMap: roadRough, roughness: .82, metalness: .06 });
 const concreteMat = new THREE.MeshStandardMaterial({ color: '#2d2344', roughness: .9, metalness: .05 });
 const metalMat = new THREE.MeshStandardMaterial({ color: '#2c2640', roughness: .38, metalness: .8 });
 const coralGlow = new THREE.MeshStandardMaterial({ color: '#ff6a3d', emissive: '#ff5a2a', emissiveIntensity: 5 });
@@ -825,19 +858,68 @@ placePillars();
 const WARM = ['#ffcf87', '#ffb46b', '#fff1d6', '#ffd9a8'];
 const COOL = ['#9ff3ff', '#c9d8ff', '#ffffff'];
 const MIXED = ['#ffcf87', '#9ff3ff', '#ff8fb1', '#fff1d6'];
-function windowTex(litP, palette) {
-  return canvasTex(128, 256, (g, w, h) => {
-    g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
-    const cols = 8, rows = 16, cw = w / cols, ch = h / rows;
-    for (let r = 0; r < rows; r++) {
-      const rowLit = Math.random() < .85;
-      for (let c = 0; c < cols; c++) if (rowLit && Math.random() < litP) { g.fillStyle = pick(palette); g.globalAlpha = rand(.5, 1); g.fillRect(c * cw + 2, r * ch + 3, cw - 4, ch - 5); }
+/* Building facades: a wall texture (floor slabs, columns, framed windows), a window-light texture and a
+   roughness texture that share one layout. Lit windows are mostly warm with some cool and the odd coloured
+   one, some behind blinds or half-drawn curtains, and a few whole floors lit like offices. Unlit windows are
+   smooth glass, so they pick up soft reflections of the dusk sky while the walls stay matte. */
+const WIN_WARM = ['#ffd49a', '#ffc27a', '#ffe7c2', '#ffb866', '#ffdcae'];
+const WIN_COOL = ['#dbe7ff', '#c4ecff', '#eef3ff'];
+const WIN_ACCENT = ['#ff9ec4', '#9ff3ea', '#c7a8ff'];
+const hexRGB = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+function facadeSet(wall, band, litP, floorP) {
+  const W = 256, H = 512, cols = 8, rows = 16, cw = W / cols, ch = H / rows, wins = [];
+  for (let r = 0; r < rows; r++) {
+    const office = Math.random() < floorP;
+    for (let c = 0; c < cols; c++) {
+      const q = Math.random();
+      wins.push({
+        x: c * cw + 4, y: r * ch + 5, w: cw - 8, h: ch - 12,
+        lit: office ? Math.random() < .9 : Math.random() < litP,
+        col: q < .72 ? pick(WIN_WARM) : q < .95 ? pick(WIN_COOL) : pick(WIN_ACCENT),
+        lvl: rand(.55, 1), blinds: Math.random() < .25, curtain: Math.random() < .2 ? rand(.3, .7) : 0
+      });
     }
-    g.globalAlpha = 1;
+  }
+  const albedo = canvasTex(W, H, g => {
+    g.fillStyle = wall; g.fillRect(0, 0, W, H);
+    const id = g.getImageData(0, 0, W, H), a = id.data;
+    for (let i = 0; i < a.length; i += 4) { const n = (Math.random() - .5) * 12; a[i] += n; a[i + 1] += n; a[i + 2] += n; }
+    g.putImageData(id, 0, 0);
+    g.fillStyle = band;
+    for (let r = 0; r < rows; r++) g.fillRect(0, r * ch + ch - 5, W, 4);
+    for (let c = 0; c <= cols; c += 2) g.fillRect(c * cw - 2, 0, 3, H);
+    for (const w of wins) {
+      const gr = g.createLinearGradient(0, w.y, 0, w.y + w.h); gr.addColorStop(0, '#1c2336'); gr.addColorStop(1, '#0a0c15');
+      g.fillStyle = gr; g.fillRect(w.x, w.y, w.w, w.h);
+      g.strokeStyle = 'rgba(170,160,200,.35)'; g.lineWidth = 1; g.strokeRect(w.x + .5, w.y + .5, w.w - 1, w.h - 1);
+      g.fillStyle = 'rgba(170,160,200,.28)'; g.fillRect(w.x + w.w / 2 - .5, w.y, 1, w.h);
+    }
   });
+  const emissive = canvasTex(W, H, g => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    for (const w of wins) {
+      if (!w.lit) continue;
+      const [R, G, B] = hexRGB(w.col), gr = g.createLinearGradient(0, w.y, 0, w.y + w.h);
+      gr.addColorStop(0, `rgba(${R},${G},${B},${w.lvl})`); gr.addColorStop(1, `rgba(${R * .55 | 0},${G * .55 | 0},${B * .55 | 0},${w.lvl})`);
+      g.fillStyle = gr; g.fillRect(w.x, w.y, w.w, w.h);
+      if (w.blinds) { g.fillStyle = 'rgba(0,0,0,.45)'; for (let yy = w.y + 2; yy < w.y + w.h; yy += 3) g.fillRect(w.x, yy, w.w, 1); }
+      if (w.curtain) { const cw2 = w.w * w.curtain * .5; g.fillStyle = 'rgba(0,0,0,.75)'; g.fillRect(w.x, w.y, cw2, w.h); g.fillRect(w.x + w.w - cw2, w.y, cw2, w.h); }
+      g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(w.x + w.w / 2 - .5, w.y, 1, w.h);
+    }
+  });
+  const rough = canvasTex(W, H, g => {
+    g.fillStyle = 'rgb(0,225,0)'; g.fillRect(0, 0, W, H);
+    g.fillStyle = 'rgb(0,34,0)'; for (const w of wins) g.fillRect(w.x, w.y, w.w, w.h);
+  }, { srgb: false });
+  return { albedo, emissive, rough };
 }
-const buildMats = [windowTex(.35, WARM), windowTex(.22, WARM), windowTex(.3, COOL), windowTex(.45, MIXED)]
-  .map(t => new THREE.MeshStandardMaterial({ color: '#1d1532', roughness: .85, metalness: .15, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 1.05 }));
+function facadeMaterial(set, emissiveIntensity) {
+  return new THREE.MeshStandardMaterial({ map: set.albedo, emissiveMap: set.emissive, emissive: '#ffffff', emissiveIntensity, roughnessMap: set.rough, roughness: 1, metalness: .04 });
+}
+const buildMats = [
+  facadeSet('#2b2a3c', '#3b3952', .3, .08), facadeSet('#392d31', '#4a3b40', .22, .05),
+  facadeSet('#25303d', '#344252', .28, .1), facadeSet('#302a3b', '#413a55', .38, .12)
+].map(set => facadeMaterial(set, 1.25));
 const roofMat = new THREE.MeshStandardMaterial({ color: '#150f26', roughness: .9 });
 const beaconMat = new THREE.MeshStandardMaterial({ color: '#ff3355', emissive: '#ff2244', emissiveIntensity: 6 });
 const SIGN_WORDS = ['HOTEL', 'RAMEN', 'OPEN', '24H', 'DINER', 'ARCADE', 'KARAOKE', 'TAXI'];
@@ -917,7 +999,7 @@ function skylineTex(base, litP, maxH) {
 });
 
 /* ----- canyon facades, construction panels and broken deck edges (all instanced on the tile grid) ----- */
-const facadeMat = new THREE.MeshStandardMaterial({ color: '#1a1330', roughness: .85, metalness: .15, emissive: '#ffffff', emissiveMap: windowTex(.34, MIXED), emissiveIntensity: .62 });
+const facadeMat = facadeMaterial(facadeSet('#27253a', '#37344e', .34, .12), .85);
 const facadeTiles = tiled(scaleBoxUV(new THREE.BoxGeometry(1.4, 22, TILE), [[TILE / 6, 22 / 14], [TILE / 6, 22 / 14], [1, 1], [1, 1], [1, 1], [1, 1]]).translate(0, 8, 0), facadeMat, TILE_N * 2, true);
 const neonGeo = mergeGeometries([new THREE.BoxGeometry(.06, .14, TILE).translate(0, 3.4, 0), new THREE.BoxGeometry(.06, .1, TILE).translate(0, 7.4, 0)]);
 const neonL = tiled(neonGeo, new THREE.MeshStandardMaterial({ color: '#ff5fa2', emissive: '#ff4f96', emissiveIntensity: 2.8 }), TILE_N);
@@ -2412,7 +2494,7 @@ function tick(rdt) {
   }
   G.flash = damp(G.flash, 0, 6, rdt); G.ca = damp(G.ca, 0, 3, rdt);
   finalPass.uniforms.uFlash.value = G.flash;
-  finalPass.uniforms.uCA.value = .0012 + (G.state === 'play' ? speedK() * .0025 : 0) + G.ca;
+  finalPass.uniforms.uCA.value = .0007 + (G.state === 'play' ? speedK() * .0014 : 0) + G.ca;
   finalPass.uniforms.uVig.value = G.state === 'dead' || G.state === 'over' ? .6 : .35;
   finalPass.uniforms.uTime.value = G.rtime;
 }
