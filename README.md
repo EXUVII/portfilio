@@ -23,7 +23,9 @@ The world curves down over a crest just ahead, so distant pieces stay hidden and
 
 ### Performance
 
-The city is merged into a few meshes, coins are drawn in one instanced call, and obstacles are pre-merged, so a typical frame takes about 140 draw calls. The glow is computed at reduced resolution and tone mapping shares the final full-screen pass. Every shader is compiled during loading, so nothing freezes mid-run. If a device can't hold about 55 fps, the render resolution steps down (at most twice per run, never below 70%) and recovers between runs, so it never flip-flops mid-run; no effects are switched off.
+The city is merged into a few meshes, coins are drawn in one instanced call, and obstacles are pre-merged, so a typical frame takes about 140 draw calls. The glow is computed at reduced resolution and tone mapping shares the final full-screen pass. Every shader is compiled during loading, so nothing freezes mid-run. If a device can't hold about 55 fps, the render resolution steps down (at most twice per run, never below 70%) and recovers between runs, so it never flip-flops mid-run.
+
+Weaker graphics chips (older Intel HD/UHD, phones) start with anti-aliasing off, a smaller shadow map and 85% resolution. On a machine that still can't reach about 40 fps at 70%, the game turns the glow off, then drops to 55% resolution, and remembers that for the next visit. If the browser is drawing without the graphics card (hardware acceleration off), the menu says so and explains how to turn it on. Press **F** during a run to see fps, frame time, render size, draw calls and the graphics chip in use.
 
 ### Controls
 
@@ -35,6 +37,7 @@ The city is merged into a few meshes, coins are drawn in one instanced call, and
 | Wall run (once unlocked) | ← or → toward a wall from an outside lane | Swipe toward the wall |
 | Wall jump (once unlocked) | ↑ while wall running | Swipe up while wall running |
 | Pause / mute | P / M | Buttons, top right |
+| Performance readout | F | — |
 
 ### Run it locally
 

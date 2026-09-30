@@ -123,6 +123,8 @@ button:focus-visible{outline:3px solid var(--neon);outline-offset:3px}
 .newbest{justify-self:start;padding:6px 12px;border-radius:999px;background:var(--gold);color:var(--ink);font-weight:700;font-size:12px;letter-spacing:.2em;text-transform:uppercase}
 .panel.center{justify-content:center;background:rgba(20,13,43,.62)}
 .panel.center .card{justify-items:center;text-align:center;padding-left:0;width:auto;margin-block:auto}
+#perfbox{position:fixed;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);max-width:calc(100% - 32px);padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.72);color:#fff;font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;pointer-events:none;z-index:50}
+.gpuwarn{margin:0;padding:12px 14px;border-radius:12px;border:1px solid var(--sun);background:rgba(255,106,61,.14);font-size:14px;line-height:1.5}
 #loaderr{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);padding:12px 14px;border-radius:12px;background:rgba(255,106,61,.15);border:1px solid var(--sun);font-size:14px}
 @media (max-width:720px){
   .card{margin-block:auto 0}
@@ -177,6 +179,7 @@ button:focus-visible{outline:3px solid var(--neon);outline-offset:3px}
       <button class="play" id="btn-play" disabled>Loading…</button>
       <span class="best" id="menu-best"></span>
     </div>
+    <p class="gpuwarn" id="gpuwarn" hidden>Your browser is drawing this game without your graphics card, so it will run slowly. Turn on hardware acceleration (in Brave, Chrome or Edge: Settings → System → “Use graphics acceleration when available”), then restart the browser.</p>
     <div class="controls">
       <div class="only-keys">
         <h3>KEYBOARD</h3>
@@ -184,7 +187,7 @@ button:focus-visible{outline:3px solid var(--neon);outline-offset:3px}
           <li><span class="k">←</span><span class="k">→</span> Switch lane</li>
           <li><span class="k">↑</span><span class="k">Space</span> Jump, again in the air to flip</li>
           <li><span class="k">↓</span> Slide, or slam down from the air</li>
-          <li><span class="k">P</span> Pause <span class="k">M</span> Mute</li>
+          <li><span class="k">P</span> Pause <span class="k">M</span> Mute <span class="k">F</span> Performance</li>
         </ul>
       </div>
       <div class="only-touch">
@@ -226,6 +229,7 @@ button:focus-visible{outline:3px solid var(--neon);outline-offset:3px}
   </div>
 </section>
 
+<div id="perfbox" hidden></div>
 <div id="loaderr" hidden>The 3D engine could not load. Check your connection, then reload the page.</div>
 <noscript><div style="position:fixed;inset:auto 16px 16px;padding:12px;border:1px solid #ff6a3d;border-radius:12px">Skyline Sprint needs JavaScript to run.</div></noscript>
 
@@ -562,7 +566,15 @@ const sound = new Sound();
    ===================================================================== */
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-const DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+/* Which graphics chip is the browser using? Software rendering (hardware acceleration switched off) and
+   laptop-class integrated chips get a lighter setup that looks the same but costs far less to draw. */
+const GPU = (() => {
+  try { const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); return String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)); }
+  catch (e) { return 'unknown'; }
+})();
+const SOFTWARE_GL = /swiftshader|llvmpipe|softpipe|basic render|software/i.test(GPU);
+const LOW_GPU = isTouch || SOFTWARE_GL || (/intel.*(hd|uhd)|mali|adreno|powervr|videocore/i.test(GPU) && !/iris|arc/i.test(GPU));
+const DPR = Math.min(window.devicePixelRatio || 1, LOW_GPU ? 1 : 1.5);
 renderer.setPixelRatio(DPR);
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -594,7 +606,7 @@ function bendMaterial(m) {
 function bendObject(o) { o.traverse(c => { if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach(bendMaterial); }); }
 
 // Anti-aliasing: 4x on normal screens, 2x on high-density screens where pixels are already tiny
-const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: isTouch ? 0 : 2 });
+const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: LOW_GPU ? 0 : 2 });
 const composer = new EffectComposer(renderer, rt);
 composer.setPixelRatio(DPR);
 composer.setSize(innerWidth, innerHeight);
@@ -724,12 +736,10 @@ const hemiLight = new THREE.HemisphereLight('#8ea8e6', '#1a1e33', 1.15); scene.a
 const sunLight = new THREE.DirectionalLight('#ffb48c', 2.7);
 sunLight.position.set(-7, 15, 11); sunLight.target.position.set(0, 0, -6);
 sunLight.castShadow = true;
-sunLight.shadow.mapSize.set(isTouch ? 1024 : 1536, isTouch ? 1024 : 1536);
+sunLight.shadow.mapSize.set(LOW_GPU ? 1024 : 1536, LOW_GPU ? 1024 : 1536);
 Object.assign(sunLight.shadow.camera, { left: -13, right: 13, top: 16, bottom: -16, near: 1, far: 70 });
 sunLight.shadow.bias = -.0004; sunLight.shadow.normalBias = .02;
 scene.add(sunLight, sunLight.target);
-const rimLight = new THREE.DirectionalLight('#ff7a4a', 1.6); rimLight.position.set(0, 6, -30); scene.add(rimLight);
-const fillLight = new THREE.DirectionalLight('#6fd8ff', .45); fillLight.position.set(12, 4, 4); scene.add(fillLight);
 
 /* =====================================================================
    The highway and the city
@@ -2247,7 +2257,7 @@ function updateEnv(rdt) {
   ENV.fog.lerp(envColor.set(z.fog), r);
   for (const k of ENV_KEYS) ENV[k] = lerp(ENV[k], z[k], r);
   scene.fog.color.copy(ENV.fog); skyMat.uniforms.uFog.value.copy(ENV.fog); skyMat.uniforms.uNight.value = ENV.night;
-  lampPools.material.opacity = ENV.pools; hemiLight.intensity = ENV.hemi; sunLight.intensity = ENV.sunI; rimLight.intensity = 1.6 * (1 - ENV.night * .6);
+  lampPools.material.opacity = ENV.pools; hemiLight.intensity = ENV.hemi * 1.12; sunLight.intensity = ENV.sunI;
   const t = G.D;
   BEND.value.set(ENV.bx * (Math.sin(t * .009) + .55 * Math.sin(t * .021 + 1.3)) / 1.55, -WORLD_DROP + ENV.by * .5 * Math.sin(t * .013 + .7));
 }
@@ -2394,6 +2404,7 @@ addEventListener('keydown', e => {
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(k)) e.preventDefault();
   if (e.repeat) return;
   if (k === 'm' || k === 'M') { toggleMute(); return; }
+  if (k === 'f' || k === 'F') { const b = $('perfbox'); b.hidden = !b.hidden; return; }
   const onButton = e.target && e.target.tagName === 'BUTTON' && (k === 'Enter' || k === ' ');
   if (G.state === 'menu') { if (!onButton && (k === 'Enter' || k === ' ') && !$('btn-play').disabled) { sound.init(); sound.ui(); startRun(); } return; }
   if (G.state === 'over') { if (!onButton && (k === 'Enter' || k === ' ' || k === 'r' || k === 'R')) { sound.ui(); startRun(); } return; }
@@ -2503,7 +2514,30 @@ function tick(rdt) {
 }
 /* Automatic resolution: if frames take too long the render resolution eases down a little, and it
    comes back up when there's headroom. Effects are never switched off. */
-const perf = { acc: 0, n: 0, scale: 1, changed: 0, dropped: -1e9 };
+/* Rescue mode for machines that still can't reach ~40 fps at the lowest normal resolution: first the glow is
+   switched off, then the resolution drops further. It's remembered, so the next visit starts there. */
+const PERF_KEY = 'skyline-sprint-perf';
+let savedRescue = 0; try { savedRescue = +localStorage.getItem(PERF_KEY) || 0; } catch (e) {}
+const perf = { acc: 0, n: 0, scale: savedRescue >= 2 ? .55 : savedRescue || LOW_GPU ? .85 : 1, changed: 0, dropped: -1e9, rescue: savedRescue };
+function setRescue(level) {
+  perf.rescue = level; bloom.enabled = level < 1;
+  try { localStorage.setItem(PERF_KEY, String(level)); } catch (e) {}
+}
+const pstat = { n: 0, acc: 0, worst: 0, t: 0 };
+function perfFrame(ms, now) {
+  if (ms > 250) return;
+  pstat.n++; pstat.acc += ms; pstat.worst = Math.max(pstat.worst, ms);
+  if (now - pstat.t < 500) return;
+  const box = $('perfbox');
+  if (!box.hidden) {
+    const ri = renderer.info.render, w = Math.round(innerWidth * DPR * perf.scale), h = Math.round(innerHeight * DPR * perf.scale);
+    box.textContent = `${Math.round(1000 / (pstat.acc / pstat.n))} fps · ${(pstat.acc / pstat.n).toFixed(1)} ms per frame (worst ${Math.round(pstat.worst)} ms)\n` +
+      `render ${w}×${h} (${Math.round(perf.scale * 100)}%) · anti-aliasing ${LOW_GPU ? 'off' : '2×'} · ${LOW_GPU ? 'light' : 'full'} setup${perf.rescue ? ` · rescue ${perf.rescue} (glow off)` : ''}\n` +
+      `${ri.calls} draw calls · ${Math.round(ri.triangles / 1000)}k triangles\n` +
+      `graphics: ${GPU}${SOFTWARE_GL ? '  ⚠ software rendering (hardware acceleration is off)' : ''}`;
+  }
+  pstat.n = 0; pstat.acc = 0; pstat.worst = 0; pstat.t = now;
+}
 function applyPixelRatio() {
   const pr = DPR * perf.scale;
   renderer.setPixelRatio(pr); composer.setPixelRatio(pr); composer.setSize(innerWidth, innerHeight);
@@ -2517,18 +2551,25 @@ function adaptResolution(ms, now) {
   let sc = perf.scale;
   // Each change rebuilds the render buffers (a small hitch), so mid-run it only ever steps down, a few seconds
   // apart; it climbs back between runs (menu or game-over), where a hitch can't be felt.
-  if (avg > 18.2) { sc = Math.max(.7, sc - .15); perf.dropped = now; }                                  // below ~55 fps
-  else if (avg < 17.2 && G.state !== 'play' && G.state !== 'dead' && now - perf.dropped > 4000) sc = 1;
+  const calm = G.state !== 'play' && G.state !== 'dead' && now - perf.dropped > 4000;
+  if (avg > 25 && sc <= .7 && now - perf.changed > 3000) {                                             // below ~40 fps at the floor
+    if (perf.rescue < 1) { setRescue(1); perf.changed = now; perf.dropped = now; return; }            // glow off: instant, no hitch
+    if (perf.rescue < 2) { setRescue(2); sc = .55; perf.dropped = now; }
+  } else if (avg > 18.2) { sc = Math.max(perf.rescue >= 2 ? .55 : .7, sc - .15); perf.dropped = now; } // below ~55 fps
+  else if (avg < 12 && calm && perf.rescue) { setRescue(perf.rescue - 1); sc = perf.rescue ? .7 : 1; } // plenty of headroom: step back up
+  else if (avg < 17.2 && calm && !perf.rescue) sc = 1;
   if (sc !== perf.scale && now - perf.changed > 3000) { perf.scale = sc; perf.changed = now; applyPixelRatio(); }
 }
 let last = performance.now(), frameDt = 1 / 60;
 function frame(now) {
   requestAnimationFrame(frame);
   adaptResolution(now - last, now);
+  perfFrame(now - last, now);
   const raw = Math.min((now - last) / 1000, 1 / 20); last = now;
   frameDt += (raw - frameDt) * .3;                        // light smoothing of frame-to-frame timing noise
   const rdt = raw > frameDt * 1.8 ? raw : frameDt;       // real hitches still pass through, so the game never slows down
   if (G.state !== 'paused') tick(rdt);
+  renderer.info.reset();
   composer.render();
 }
 
@@ -2557,6 +2598,10 @@ resize();
 resetPlayer();
 updateMenuBest();
 renderProgress();
+$('gpuwarn').hidden = !SOFTWARE_GL;
+renderer.info.autoReset = false;
+if (perf.rescue) setRescue(perf.rescue);
+if (perf.scale !== 1) applyPixelRatio();
 const playBtn = $('btn-play');
 playBtn.disabled = false;
 playBtn.innerHTML = 'Run <kbd>Enter</kbd>';
